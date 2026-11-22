@@ -1,7 +1,8 @@
 import { describeOutcome, applyProgression, exerciseSucceeded } from '../domain/progression'
-import { LIFTS, schemeLabel, stageSpec } from '../domain/program'
+import { resolveLift, schemeLabel, stageSpec } from '../domain/program'
 import type { ExerciseRecord } from '../domain/types'
 import { formatWeight } from '../domain/units'
+import { useApp } from '../store/context'
 import { ChevronIcon } from './icons'
 import { PlateBreakdown } from './PlateBreakdown'
 import { SetRow } from './SetRow'
@@ -15,7 +16,8 @@ interface ExerciseCardProps {
 }
 
 export function ExerciseCard({ exercise, expanded, onToggle, onMarkSet, onLogAmrap }: ExerciseCardProps) {
-  const lift = LIFTS[exercise.liftId]
+  const { data } = useApp()
+  const lift = resolveLift(data.lifts, exercise.liftId)
   const spec = stageSpec(exercise.tier, exercise.stage)
   const logged = exercise.sets.filter((set) => set.success !== null).length
   const complete = exercise.sets.every((set) => set.success !== null)

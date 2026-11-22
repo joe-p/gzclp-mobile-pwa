@@ -1,12 +1,13 @@
 import { describeOutcome } from '../domain/progression'
-import { LIFTS, PROGRAM_DAYS, schemeLabel, stageSpec } from '../domain/program'
+import { programDays, resolveLift, schemeLabel, stageSpec } from '../domain/program'
 import type { SessionRecord } from '../domain/types'
 import { formatWeight } from '../domain/units'
 import { useApp } from '../store/context'
 
 export function SummarySheet({ session }: { session: SessionRecord }) {
-  const { dispatch } = useApp()
-  const day = PROGRAM_DAYS.find((item) => item.id === session.dayId) ?? PROGRAM_DAYS[0]
+  const { data, dispatch } = useApp()
+  const days = programDays(data.t3ByDay)
+  const day = days.find((item) => item.id === session.dayId) ?? days[0]
   const increased = session.exercises.filter((exercise) => exercise.outcome?.action === 'increase').length
 
   return (
@@ -24,7 +25,7 @@ export function SummarySheet({ session }: { session: SessionRecord }) {
 
         <ul className="summary-list">
           {session.exercises.map((exercise) => {
-            const lift = LIFTS[exercise.liftId]
+            const lift = resolveLift(data.lifts, exercise.liftId)
             const spec = stageSpec(exercise.tier, exercise.stage)
             const description = exercise.outcome ? describeOutcome(exercise.outcome) : null
             return (

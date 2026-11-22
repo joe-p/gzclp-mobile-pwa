@@ -6,6 +6,8 @@ linear progression program. Built to be used one-handed between sets.
 ## What it does
 
 - **Fixed 4-day GZCLP rotation** (A1 / B1 / A2 / B2) with T1, T2, and T3 work.
+- **Customizable T3 accessories.** Add or remove accessory exercises per day in Settings; the same
+  exercise on multiple days shares one working weight.
 - **Tracks current weight per lift and tier.** T1 bench and T2 bench are separate progressions, just
   like the spreadsheet.
 - **Per-set logging.** Tap ✓ or ✗ for each set, including the AMRAP set.
@@ -34,6 +36,7 @@ linear progression program. Built to be used one-handed between sets.
 | B2  | Deadlift               | Overhead Press         | Barbell Row |
 
 The last set of every lift is AMRAP. Leave 1–2 reps in the tank rather than grinding to failure.
+T1/T2 slots are fixed; each day's T3 list can be edited under Settings.
 
 ## Stack
 
@@ -71,5 +74,6 @@ public/         icons, manifest assets
 ## Notes
 
 - All weights are pounds, rounded to 5 lb plate jumps.
+- Custom T3 exercises start at 45 lb and can be marked as barbell-loaded so plate math is shown.
 - Progression is applied only when a session is finished, never mid-set.
 - Resets round to the nearest 5 lb with an empty-bar floor.

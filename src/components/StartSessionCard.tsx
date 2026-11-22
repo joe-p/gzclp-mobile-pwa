@@ -1,10 +1,11 @@
-import { LIFTS, PROGRAM_DAYS, schemeLabel, stageSpec, trackKey } from '../domain/program'
+import { programDays, resolveLift, schemeLabel, stageSpec, trackKey } from '../domain/program'
 import { formatWeight } from '../domain/units'
 import { useApp } from '../store/context'
 
 export function StartSessionCard() {
   const { data, dispatch } = useApp()
-  const day = PROGRAM_DAYS[data.nextDayIndex] ?? PROGRAM_DAYS[0]
+  const days = programDays(data.t3ByDay)
+  const day = days[data.nextDayIndex] ?? days[0]
 
   return (
     <div className="stack">
@@ -27,7 +28,7 @@ export function StartSessionCard() {
             return (
               <li key={key} className="preview-row">
                 <span className={`tier-dot tier-${slot.tier.toLowerCase()}`}>{slot.tier}</span>
-                <span className="preview-name">{LIFTS[slot.liftId].name}</span>
+                <span className="preview-name">{resolveLift(data.lifts, slot.liftId).name}</span>
                 <span className="preview-scheme">{schemeLabel(spec.sets, spec.reps)}</span>
                 <span className="preview-weight">
                   {formatWeight(track.weight)}

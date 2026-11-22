@@ -89,3 +89,105 @@ describe('migrate', () => {
     expect(parseImportText('not json')).toBeNull()
   })
 })
+
+describe('migrate accessories', () => {
+  it('gives pre-accessory backups the default T3 program and built-in lifts', () => {
+    const data = migrate({
+      version: 3,
+      settings: { setupComplete: true },
+      tracks: {},
+    })
+
+    expect(data?.t3ByDay).toEqual({ A1: ['latpulldown'], B1: ['row'], A2: ['latpulldown'], B2: ['row'] })
+    expect(data?.lifts.squat).toMatchObject({ name: 'Squat', barbell: true })
+    expect(data?.lifts.latpulldown).toMatchObject({ name: 'Lat Pulldown', barbell: false })
+  })
+
+  it('round-trips custom accessories and their config', () => {
+    const initial = createInitialData()
+    const lift = {
+      id: 'custom_legpress',
+      name: 'Leg Press',
+      short: 'LP',
+      body: 'upper' as const,
+      barbell: false,
+    }
+    initial.lifts[lift.id] = lift
+    initial.t3ByDay.A1 = ['latpulldown', lift.id]
+    initial.tracks['custom_legpress:T3'] = { weight: 90, stage: 0 }
+
+    expect(parseImportText(JSON.stringify(initial))).toEqual(initial)
+  })
+
+  it('respects a day with no T3 accessories', () => {
+    const initial = createInitialData()
+    const tracks = { ...initial.tracks }
+    delete tracks['latpulldown:T3']
+    const data = migrate({
+      ...initial,
+      tracks,
+      t3ByDay: { A1: [], B1: ['row'], A2: [], B2: [] },
+    })
+
+    expect(data?.t3ByDay).toEqual({ A1: [], B1: ['row'], A2: [], B2: [] })
+    expect(data?.tracks['latpulldown:T3']).toBeUndefined()
+    expect(data?.tracks['row:T3']).toEqual(initial.tracks['row:T3'])
+  })
+
+  it('drops malformed custom lifts and unknown day ids', () => {
+    const initial = createInitialData()
+    const data = migrate({
+      ...initial,
+      lifts: {
+        ...initial.lifts,
+        bad: { id: 'bad', name: '' },
+        'with:colon': { id: 'with:colon', name: 'Nope' },
+      },
+      t3ByDay: { A1: ['nope', 'latpulldown'], B1: [], A2: [], B2: [] },
+    })
+
+    expect(data?.lifts.bad).toBeUndefined()
+    expect(data?.lifts['with:colon']).toBeUndefined()
+    expect(data?.t3ByDay.A1).toEqual(['latpulldown'])
+  })
+
+  it('keeps sessions whose custom lift definition is missing', () => {
+    const initial = createInitialData()
+    const data = migrate({
+      ...initial,
+      sessions: [
+        {
+          id: 's1',
+          dayId: 'A1',
+          startedAt: '2026-01-02T10:00:00.000Z',
+          finishedAt: '2026-01-02T11:00:00.000Z',
+          exercises: [
+            {
+              liftId: 'custom_ghost',
+              tier: 'T3',
+              weight: 50,
+              stage: 0,
+              sets: [{ target: 15, reps: 15, success: true, amrap: true }],
+              e1rm: null,
+              outcome: null,
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(data?.sessions).toHaveLength(1)
+    expect(data?.lifts.custom_ghost).toMatchObject({ name: 'custom_ghost', barbell: false })
+  })
+
+  it('keeps a removed accessory track so its weight survives', () => {
+    const initial = createInitialData()
+    const data = migrate({
+      ...initial,
+      t3ByDay: { A1: [], B1: [], A2: [], B2: [] },
+      tracks: { ...initial.tracks, 'row:T3': { weight: 105, stage: 0 } },
+    })
+
+    expect(data?.tracks['row:T3']).toEqual({ weight: 105, stage: 0 })
+  })
+})

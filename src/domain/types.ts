@@ -1,4 +1,7 @@
-export type LiftId = 'squat' | 'bench' | 'deadlift' | 'ohp' | 'latpulldown' | 'row'
+export type BuiltInLiftId = 'squat' | 'bench' | 'deadlift' | 'ohp' | 'latpulldown' | 'row'
+
+/** Built-in lifts use fixed ids; user-created T3 accessories get opaque custom ids. */
+export type LiftId = string
 
 export type Tier = 'T1' | 'T2' | 'T3'
 
@@ -14,6 +17,8 @@ export interface LiftDefinition {
   readonly name: string
   readonly short: string
   readonly body: BodyArea
+  /** Loaded on a barbell, so plate math applies. */
+  readonly barbell: boolean
 }
 
 export interface ProgramSlot {
@@ -101,9 +106,15 @@ export interface Settings {
   haptics: boolean
 }
 
+export type T3ByDay = Record<DayId, LiftId[]>
+
 export interface AppData {
   version: number
   settings: Settings
+  /** Built-in lifts plus user-created T3 accessories. */
+  lifts: Record<LiftId, LiftDefinition>
+  /** T3 accessory lift ids per day, in display order. T1/T2 slots are fixed. */
+  t3ByDay: T3ByDay
   tracks: Record<TrackKey, TrackState>
   nextDayIndex: number
   sessions: SessionRecord[]

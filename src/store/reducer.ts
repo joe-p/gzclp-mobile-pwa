@@ -1,11 +1,23 @@
 import { normalizePlateInventory } from '../domain/plates'
-import { PROGRAM_DAYS, TIERS, trackKey } from '../domain/program'
+import {
+  defaultWeightFor,
+  newCustomLiftId,
+  normalizeLiftName,
+  PROGRAM_DAY_IDS,
+  programDays,
+  shortForName,
+  TIERS,
+  trackKey,
+} from '../domain/program'
 import { applyProgression, exerciseSucceeded } from '../domain/progression'
 import { createSession, isExerciseComplete, recordAmrapResult, recordSetResult, sessionProgress } from '../domain/session'
 import type {
   ActiveSession,
   AppData,
+  DayId,
   ExerciseRecord,
+  LiftDefinition,
+  LiftId,
   PlateInventory,
   RestByTier,
   SessionRecord,
@@ -31,6 +43,8 @@ export type Action =
   | { type: 'dismissSummary' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
   | { type: 'updateTrackWeight'; key: TrackKey; weight: number }
+  | { type: 'addT3'; dayId: DayId; name: string; barbell: boolean }
+  | { type: 'removeT3'; dayId: DayId; liftId: LiftId }
   | { type: 'importData'; data: AppData }
   | { type: 'resetData' }
 
@@ -97,7 +111,8 @@ export function reducer(state: AppData, action: Action): AppData {
 
     case 'startSession': {
       if (state.activeSession) return state
-      const day = PROGRAM_DAYS[state.nextDayIndex] ?? PROGRAM_DAYS[0]
+      const days = programDays(state.t3ByDay)
+      const day = days[state.nextDayIndex] ?? days[0]
       return {
         ...state,
         activeSession: createSession(day, state.tracks),
@@ -158,7 +173,7 @@ export function reducer(state: AppData, action: Action): AppData {
         sessions: [finished, ...state.sessions].slice(0, 500),
         activeSession: null,
         lastSummaryId: finished.id,
-        nextDayIndex: (state.nextDayIndex + 1) % PROGRAM_DAYS.length,
+        nextDayIndex: (state.nextDayIndex + 1) % PROGRAM_DAY_IDS.length,
       }
     }
 
@@ -183,6 +198,54 @@ export function reducer(state: AppData, action: Action): AppData {
       return {
         ...state,
         tracks: { ...state.tracks, [action.key]: { ...track, weight: sanitizeWeight(action.weight) } },
+      }
+    }
+
+    case 'addT3': {
+      const name = normalizeLiftName(action.name)
+      if (name.length === 0) return state
+
+      // Reusing a lift by name gives the same accessory one shared progression
+      // across every day it appears on.
+      const existing = Object.values(state.lifts).find(
+        (lift) => lift.name.toLowerCase() === name.toLowerCase(),
+      )
+      const lift: LiftDefinition = existing ?? {
+        id: newCustomLiftId(),
+        name,
+        short: shortForName(name),
+        body: 'upper',
+        barbell: action.barbell,
+      }
+
+      const dayT3 = state.t3ByDay[action.dayId] ?? []
+      if (dayT3.includes(lift.id)) return state
+
+      const key = trackKey(lift.id, 'T3')
+      return {
+        ...state,
+        lifts: existing ? state.lifts : { ...state.lifts, [lift.id]: lift },
+        t3ByDay: { ...state.t3ByDay, [action.dayId]: [...dayT3, lift.id] },
+        tracks: state.tracks[key]
+          ? state.tracks
+          : {
+              ...state.tracks,
+              [key]: { weight: sanitizeWeight(defaultWeightFor(lift.id, 'T3')), stage: 0 },
+            },
+      }
+    }
+
+    case 'removeT3': {
+      const dayT3 = state.t3ByDay[action.dayId]
+      if (!dayT3?.includes(action.liftId)) return state
+      // Keep the lift definition and track so history stays intact and re-adding
+      // the accessory later restores its working weight.
+      return {
+        ...state,
+        t3ByDay: {
+          ...state.t3ByDay,
+          [action.dayId]: dayT3.filter((liftId) => liftId !== action.liftId),
+        },
       }
     }
 

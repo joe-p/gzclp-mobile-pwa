@@ -1,10 +1,19 @@
 import { defaultPlateInventory, normalizePlateInventory } from '../domain/plates'
-import { ALL_TRACK_KEYS, LIFTS } from '../domain/program'
+import {
+  cloneT3ByDay,
+  defaultTracks,
+  LIFTS,
+  normalizeLiftName,
+  PROGRAM_DAY_IDS,
+  shortForName,
+  trackKey,
+} from '../domain/program'
 import type {
   ActiveSession,
   AppData,
   DayId,
   ExerciseRecord,
+  LiftDefinition,
   LiftId,
   PlateInventory,
   PlateStack,
@@ -12,14 +21,16 @@ import type {
   SessionRecord,
   SetRecord,
   Settings,
+  T3ByDay,
   Tier,
+  TrackKey,
+  TrackState,
 } from '../domain/types'
 import { sanitizeWeight } from '../domain/units'
 import { clampRestSeconds, createInitialData, DATA_VERSION, DEFAULT_REST_BY_TIER } from './defaults'
 
 export const STORAGE_KEY = 'gzclp.data.v1'
 
-const DAY_IDS: readonly DayId[] = ['A1', 'B1', 'A2', 'B2']
 const TIERS: readonly Tier[] = ['T1', 'T2', 'T3']
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -28,6 +39,86 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function readNumber(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function isLiftId(value: unknown): value is LiftId {
+  return typeof value === 'string' && value.length > 0 && value.length <= 100 && !value.includes(':')
+}
+
+function hasLift(lifts: Record<LiftId, LiftDefinition>, liftId: LiftId): boolean {
+  return Object.hasOwn(lifts, liftId)
+}
+
+function fallbackLift(liftId: LiftId): LiftDefinition {
+  return {
+    id: liftId,
+    name: liftId,
+    short: shortForName(liftId),
+    body: 'upper',
+    barbell: false,
+  }
+}
+
+/** Reads user-created lifts. Built-in definitions always come from code. */
+function readLift(value: unknown): LiftDefinition | null {
+  if (!isObject(value) || !isLiftId(value.id) || Object.hasOwn(LIFTS, value.id)) return null
+  const name = typeof value.name === 'string' ? normalizeLiftName(value.name) : ''
+  if (name.length === 0) return null
+  return {
+    id: value.id,
+    name,
+    short:
+      typeof value.short === 'string' && value.short.trim().length > 0
+        ? value.short.trim().slice(0, 4).toUpperCase()
+        : shortForName(name),
+    body: value.body === 'lower' ? 'lower' : 'upper',
+    barbell: value.barbell === true,
+  }
+}
+
+function readLifts(value: unknown): Record<LiftId, LiftDefinition> {
+  const lifts: Record<LiftId, LiftDefinition> = { ...LIFTS }
+  if (!isObject(value) || Array.isArray(value)) return lifts
+
+  for (const entry of Object.values(value)) {
+    const lift = readLift(entry)
+    if (lift && !hasLift(lifts, lift.id)) lifts[lift.id] = lift
+  }
+  return lifts
+}
+
+/**
+ * Reads the per-day T3 lists. Backups from before accessories were editable get
+ * the default program; an explicitly empty list is respected.
+ */
+function readT3ByDay(value: unknown, lifts: Record<LiftId, LiftDefinition>): T3ByDay {
+  if (!isObject(value) || Array.isArray(value)) return cloneT3ByDay()
+
+  const t3ByDay = {} as T3ByDay
+  for (const dayId of PROGRAM_DAY_IDS) {
+    const stored = value[dayId]
+    if (!Array.isArray(stored)) {
+      t3ByDay[dayId] = []
+      continue
+    }
+
+    const ids: LiftId[] = []
+    for (const entry of stored) {
+      if (!isLiftId(entry) || !hasLift(lifts, entry) || ids.includes(entry)) continue
+      ids.push(entry)
+    }
+    t3ByDay[dayId] = ids
+  }
+  return t3ByDay
+}
+
+function splitTrackKey(key: string): { liftId: LiftId; tier: Tier } | null {
+  const separator = key.lastIndexOf(':')
+  if (separator <= 0) return null
+  const liftId = key.slice(0, separator)
+  const tier = key.slice(separator + 1) as Tier
+  if (!isLiftId(liftId) || !TIERS.includes(tier)) return null
+  return { liftId, tier }
 }
 
 function readSet(value: unknown): SetRecord | null {
@@ -59,9 +150,9 @@ function readOutcome(value: unknown): ProgressionOutcome | null {
 
 function readExercise(value: unknown): ExerciseRecord | null {
   if (!isObject(value)) return null
-  const liftId = value.liftId as LiftId
+  const liftId = value.liftId
   const tier = value.tier as Tier
-  if (!(liftId in LIFTS) || !TIERS.includes(tier)) return null
+  if (!isLiftId(liftId) || !TIERS.includes(tier)) return null
   if (!Array.isArray(value.sets) || value.sets.length === 0) return null
   const sets = value.sets.map(readSet)
   if (sets.some((set) => set === null)) return null
@@ -79,7 +170,7 @@ function readExercise(value: unknown): ExerciseRecord | null {
 function readSession(value: unknown): SessionRecord | null {
   if (!isObject(value)) return null
   if (typeof value.id !== 'string' || value.id.length === 0) return null
-  if (!DAY_IDS.includes(value.dayId as DayId)) return null
+  if (!PROGRAM_DAY_IDS.includes(value.dayId as DayId)) return null
   if (typeof value.startedAt !== 'string') return null
   if (!Array.isArray(value.exercises) || value.exercises.length === 0) return null
   const exercises = value.exercises.map(readExercise)
@@ -151,12 +242,18 @@ function readRestByTier(rawSettings: Record<string, unknown>): Settings['restByT
 export function migrate(raw: unknown): AppData | null {
   if (!isObject(raw) || !isObject(raw.tracks)) return null
 
-  const initial = createInitialData()
-  const tracks = { ...initial.tracks }
-  for (const key of ALL_TRACK_KEYS) {
-    const stored = raw.tracks[key]
+  const lifts = readLifts(raw.lifts)
+  const t3ByDay = readT3ByDay(raw.t3ByDay, lifts)
+  const tracks: Record<TrackKey, TrackState> = defaultTracks(t3ByDay)
+
+  for (const [key, stored] of Object.entries(raw.tracks)) {
     if (!isObject(stored) || typeof stored.weight !== 'number' || !Number.isFinite(stored.weight)) continue
-    tracks[key] = {
+    const parsed = splitTrackKey(key)
+    if (!parsed) continue
+    // Keep tracks for accessories that were removed from every day, so adding
+    // them back later restores the working weight.
+    if (!hasLift(lifts, parsed.liftId)) lifts[parsed.liftId] = fallbackLift(parsed.liftId)
+    tracks[trackKey(parsed.liftId, parsed.tier)] = {
       weight: sanitizeWeight(stored.weight),
       stage: Math.max(0, Math.trunc(readNumber(stored.stage, 0))),
     }
@@ -176,6 +273,14 @@ export function migrate(raw: unknown): AppData | null {
         .filter((session): session is SessionRecord => session !== null)
     : []
 
+  // A backup can reference a custom lift whose definition was dropped; keep the
+  // history readable with a placeholder instead of discarding the session.
+  for (const session of sessions) {
+    for (const exercise of session.exercises) {
+      if (!hasLift(lifts, exercise.liftId)) lifts[exercise.liftId] = fallbackLift(exercise.liftId)
+    }
+  }
+
   const lastSummaryId =
     typeof raw.lastSummaryId === 'string' && sessions.some((session) => session.id === raw.lastSummaryId)
       ? raw.lastSummaryId
@@ -184,8 +289,13 @@ export function migrate(raw: unknown): AppData | null {
   return {
     version: DATA_VERSION,
     settings,
+    lifts,
+    t3ByDay,
     tracks,
-    nextDayIndex: Math.min(3, Math.max(0, Math.trunc(readNumber(raw.nextDayIndex, 0)))),
+    nextDayIndex: Math.min(
+      PROGRAM_DAY_IDS.length - 1,
+      Math.max(0, Math.trunc(readNumber(raw.nextDayIndex, 0))),
+    ),
     sessions,
     activeSession: readActiveSession(raw.activeSession),
     lastSummaryId,

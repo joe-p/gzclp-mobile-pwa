@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { normalizePlateInventory } from '../domain/plates'
-import { ALL_TRACK_KEYS, PROGRAM_DAYS } from '../domain/program'
+import { allTrackKeys, programDays } from '../domain/program'
 import type { PlateInventory, RestByTier, Tier, TrackKey } from '../domain/types'
 import { useApp } from '../store/context'
 import { PlateInventoryEditor } from './PlateInventoryEditor'
@@ -11,7 +11,7 @@ export function Onboarding() {
   const { data, dispatch } = useApp()
   const [weights, setWeights] = useState<Record<TrackKey, number>>(() => {
     const initial = {} as Record<TrackKey, number>
-    for (const key of ALL_TRACK_KEYS) initial[key] = data.tracks[key].weight
+    for (const key of allTrackKeys(data.t3ByDay)) initial[key] = data.tracks[key].weight
     return initial
   })
   const [restByTier, setRestByTier] = useState<RestByTier>(() => ({ ...data.settings.restByTier }))
@@ -25,7 +25,7 @@ export function Onboarding() {
     setRestByTier((current) => ({ ...current, [tier]: seconds }))
   }
 
-  const firstDay = PROGRAM_DAYS[0]
+  const firstDay = programDays(data.t3ByDay)[0]
 
   return (
     <div className="onboarding">
@@ -45,19 +45,40 @@ export function Onboarding() {
         <section className="card">
           <h2 className="card-title">T1 · main lifts</h2>
           <p className="muted small">5×3 with the last set AMRAP. Start near your 3–5 rep max.</p>
-          <TrackWeightList tier="T1" weightFor={(key) => weights[key]} onChange={setWeight} />
+          <TrackWeightList
+            tier="T1"
+            lifts={data.lifts}
+            t3ByDay={data.t3ByDay}
+            weightFor={(key) => weights[key]}
+            onChange={setWeight}
+          />
         </section>
 
         <section className="card">
           <h2 className="card-title">T2 · secondary lifts</h2>
           <p className="muted small">3×10 with the last set AMRAP. Around 60% of your T1 weight works well.</p>
-          <TrackWeightList tier="T2" weightFor={(key) => weights[key]} onChange={setWeight} />
+          <TrackWeightList
+            tier="T2"
+            lifts={data.lifts}
+            t3ByDay={data.t3ByDay}
+            weightFor={(key) => weights[key]}
+            onChange={setWeight}
+          />
         </section>
 
         <section className="card">
           <h2 className="card-title">T3 · accessories</h2>
-          <p className="muted small">3×15+. No automatic weight changes — chase reps, then add weight.</p>
-          <TrackWeightList tier="T3" weightFor={(key) => weights[key]} onChange={setWeight} />
+          <p className="muted small">
+            3×15+. No automatic weight changes — chase reps, then add weight. Add or remove
+            accessories per day later in Settings.
+          </p>
+          <TrackWeightList
+            tier="T3"
+            lifts={data.lifts}
+            t3ByDay={data.t3ByDay}
+            weightFor={(key) => weights[key]}
+            onChange={setWeight}
+          />
         </section>
 
         <section className="card">

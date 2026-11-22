@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
-import { PROGRAM_DAYS } from '../domain/program'
+import type { FormEvent } from 'react'
+import { programDays } from '../domain/program'
+import type { DayId } from '../domain/types'
 import { useApp } from '../store/context'
 import { downloadBackup, readImportFile } from '../store/storage'
 import { DayWeightList } from './TrackWeightList'
@@ -7,10 +9,50 @@ import { DownloadIcon, TrashIcon, UploadIcon } from './icons'
 import { PlateInventoryEditor } from './PlateInventoryEditor'
 import { RestTierPicker } from './RestTierPicker'
 
+function AddAccessoryForm({ dayId }: { dayId: DayId }) {
+  const { dispatch } = useApp()
+  const [name, setName] = useState('')
+  const [barbell, setBarbell] = useState(false)
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const trimmed = name.trim()
+    if (!trimmed) return
+    dispatch({ type: 'addT3', dayId, name: trimmed, barbell })
+    setName('')
+    setBarbell(false)
+  }
+
+  return (
+    <form className="accessory-add" onSubmit={submit}>
+      <input
+        className="accessory-input"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        placeholder="Add T3 exercise"
+        aria-label={`New T3 exercise for ${dayId}`}
+        maxLength={40}
+      />
+      <label className="accessory-check">
+        <input
+          type="checkbox"
+          checked={barbell}
+          onChange={(event) => setBarbell(event.target.checked)}
+        />
+        Barbell
+      </label>
+      <button type="submit" className="btn btn-ghost accessory-submit" disabled={!name.trim()}>
+        Add
+      </button>
+    </form>
+  )
+}
+
 export function SettingsScreen() {
   const { data, dispatch } = useApp()
   const fileRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const days = programDays(data.t3ByDay)
 
   const importFile = async (file: File | undefined) => {
     if (!file) return
@@ -38,17 +80,21 @@ export function SettingsScreen() {
     <div className="stack">
       <h1 className="screen-title">Settings</h1>
 
-      {PROGRAM_DAYS.map((day) => (
+      {days.map((day) => (
         <section className="card" key={day.id}>
           <h2 className="card-title">
             {day.label} · {day.focus}
           </h2>
           <DayWeightList
             day={day}
+            days={days}
+            lifts={data.lifts}
             weightFor={(key) => data.tracks[key].weight}
             stageFor={(key) => data.tracks[key].stage}
             onChange={(key, weight) => dispatch({ type: 'updateTrackWeight', key, weight })}
+            onRemoveT3={(liftId) => dispatch({ type: 'removeT3', dayId: day.id, liftId })}
           />
+          <AddAccessoryForm dayId={day.id} />
         </section>
       ))}
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { describeOutcome } from '../domain/progression'
-import { LIFTS, PROGRAM_DAYS, schemeLabel, stageSpec } from '../domain/program'
+import { programDays, resolveLift, schemeLabel, stageSpec } from '../domain/program'
 import type { SessionRecord } from '../domain/types'
 import { formatDate, formatTime, formatWeight } from '../domain/units'
 import { useApp } from '../store/context'
@@ -54,7 +54,9 @@ function HistoryItem({
   open: boolean
   onToggle: () => void
 }) {
-  const day = PROGRAM_DAYS.find((item) => item.id === session.dayId) ?? PROGRAM_DAYS[0]
+  const { data } = useApp()
+  const days = programDays(data.t3ByDay)
+  const day = days.find((item) => item.id === session.dayId) ?? days[0]
   const successes = session.exercises.filter((exercise) => exercise.outcome?.success).length
 
   return (
@@ -76,7 +78,7 @@ function HistoryItem({
       {open && (
         <div className="history-body">
           {session.exercises.map((exercise) => {
-            const lift = LIFTS[exercise.liftId]
+            const lift = resolveLift(data.lifts, exercise.liftId)
             const spec = stageSpec(exercise.tier, exercise.stage)
             const description = exercise.outcome ? describeOutcome(exercise.outcome) : null
             return (

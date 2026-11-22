@@ -16,11 +16,11 @@ function plateClass(size: number): string {
 export function PlateBreakdown({ liftId, weight }: PlateBreakdownProps) {
   const { data } = useApp()
 
-  if (!isBarbellLift(liftId)) {
+  if (!isBarbellLift(data.lifts[liftId])) {
     return (
       <div className="plate-load plate-load-machine">
-        <span className="plate-load-title">Machine</span>
-        <p className="plate-load-detail">No plates to load — set the pin or stack weight.</p>
+        <span className="plate-load-title">No bar</span>
+        <p className="plate-load-detail">Set the weight directly — no plate math for this accessory.</p>
       </div>
     )
   }

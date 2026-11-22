@@ -1,4 +1,4 @@
-import { PROGRAM_DAYS } from '../domain/program'
+import { programDays } from '../domain/program'
 import type { Tier } from '../domain/types'
 import { useApp } from '../store/context'
 import { ExerciseCard } from './ExerciseCard'
@@ -12,7 +12,8 @@ export function SessionScreen({ onSetLogged }: SessionScreenProps) {
   const session = data.activeSession
   if (!session) return null
 
-  const day = PROGRAM_DAYS.find((item) => item.id === session.dayId) ?? PROGRAM_DAYS[0]
+  const days = programDays(data.t3ByDay)
+  const day = days.find((item) => item.id === session.dayId) ?? days[0]
 
   const discard = () => {
     if (window.confirm('Discard this workout? Everything logged in this session will be lost.')) {

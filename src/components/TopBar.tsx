@@ -1,10 +1,11 @@
-import { PROGRAM_DAYS } from '../domain/program'
+import { programDays } from '../domain/program'
 import { useApp } from '../store/context'
 
 export function TopBar() {
   const { data } = useApp()
   const active = data.activeSession
-  const next = PROGRAM_DAYS[data.nextDayIndex] ?? PROGRAM_DAYS[0]
+  const days = programDays(data.t3ByDay)
+  const next = days[data.nextDayIndex] ?? days[0]
 
   return (
     <header className="topbar">

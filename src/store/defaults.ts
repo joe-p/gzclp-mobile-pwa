@@ -1,8 +1,8 @@
 import { defaultPlateInventory, normalizePlateInventory } from '../domain/plates'
-import { defaultTracks } from '../domain/program'
+import { cloneT3ByDay, defaultTracks, LIFTS } from '../domain/program'
 import type { AppData, RestByTier, Settings } from '../domain/types'
 
-export const DATA_VERSION = 3
+export const DATA_VERSION = 4
 
 export const DEFAULT_REST_BY_TIER: RestByTier = {
   T1: 180,
@@ -30,6 +30,8 @@ export function createInitialData(): AppData {
       restByTier: { ...DEFAULT_REST_BY_TIER },
       plates: normalizePlateInventory(DEFAULT_SETTINGS.plates),
     },
+    lifts: { ...LIFTS },
+    t3ByDay: cloneT3ByDay(),
     tracks: defaultTracks(),
     nextDayIndex: 0,
     sessions: [],

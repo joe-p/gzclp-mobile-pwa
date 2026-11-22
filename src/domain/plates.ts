@@ -1,4 +1,4 @@
-import type { LiftId, PlateInventory, PlateStack } from './types'
+import type { LiftDefinition, PlateInventory, PlateStack } from './types'
 import { roundToIncrement } from './units'
 
 /** Plate sizes in pounds that the inventory editor exposes, heaviest first. */
@@ -30,9 +30,9 @@ export function defaultPlateInventory(): PlateInventory {
   }
 }
 
-/** Lat pulldown is a machine; every other lift in the program is loaded on a bar. */
-export function isBarbellLift(liftId: LiftId): boolean {
-  return liftId !== 'latpulldown'
+/** Custom accessories default to machine/other until marked as barbell-loaded. */
+export function isBarbellLift(lift: LiftDefinition | undefined): boolean {
+  return lift?.barbell === true
 }
 
 function round2(value: number): number {

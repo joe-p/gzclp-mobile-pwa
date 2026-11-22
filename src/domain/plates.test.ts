@@ -8,6 +8,7 @@ import {
   totalPlateWeight,
   withPairs,
 } from './plates'
+import { LIFTS } from './program'
 import type { PlateInventory } from './types'
 
 function inventory(bar: number, pairCounts: Record<number, number>): PlateInventory {
@@ -122,8 +123,13 @@ describe('withPairs', () => {
 
 describe('isBarbellLift', () => {
   it('treats the lat pulldown as a machine', () => {
-    expect(isBarbellLift('latpulldown')).toBe(false)
-    expect(isBarbellLift('squat')).toBe(true)
-    expect(isBarbellLift('row')).toBe(true)
+    expect(isBarbellLift(LIFTS.latpulldown)).toBe(false)
+    expect(isBarbellLift(LIFTS.squat)).toBe(true)
+    expect(isBarbellLift(LIFTS.row)).toBe(true)
+  })
+
+  it('treats unknown or custom machine accessories as non-barbell', () => {
+    expect(isBarbellLift(undefined)).toBe(false)
+    expect(isBarbellLift({ ...LIFTS.row, id: 'custom_legpress', barbell: false })).toBe(false)
   })
 })
