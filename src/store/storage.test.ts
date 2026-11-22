@@ -48,6 +48,27 @@ describe('migrate', () => {
     expect(data?.settings.restByTier).toEqual({ T1: 300, T2: 0, T3: 900 })
   })
 
+  it('gives pre-plate backups the default bar and plate set', () => {
+    const data = migrate({ version: 2, settings: { setupComplete: true }, tracks: {} })
+    expect(data?.settings.plates.bar).toBe(45)
+    expect(data?.settings.plates.plates.find((plate) => plate.size === 45)?.pairs).toBe(2)
+  })
+
+  it('reads a custom plate inventory and keeps custom sizes', () => {
+    const initial = createInitialData()
+    const data = migrate({
+      ...initial,
+      settings: {
+        ...initial.settings,
+        plates: { bar: 35, plates: [{ size: 45, pairs: 0 }, { size: 20, pairs: 3 }] },
+      },
+    })
+
+    expect(data?.settings.plates.bar).toBe(35)
+    expect(data?.settings.plates.plates.find((plate) => plate.size === 45)?.pairs).toBe(0)
+    expect(data?.settings.plates.plates.find((plate) => plate.size === 20)?.pairs).toBe(3)
+  })
+
   it('drops malformed sessions and dangling summary ids', () => {
     const data = migrate({
       ...createInitialData(),

@@ -1,7 +1,8 @@
+import { defaultPlateInventory, normalizePlateInventory } from '../domain/plates'
 import { defaultTracks } from '../domain/program'
 import type { AppData, RestByTier, Settings } from '../domain/types'
 
-export const DATA_VERSION = 2
+export const DATA_VERSION = 3
 
 export const DEFAULT_REST_BY_TIER: RestByTier = {
   T1: 180,
@@ -11,6 +12,7 @@ export const DEFAULT_REST_BY_TIER: RestByTier = {
 
 export const DEFAULT_SETTINGS: Settings = {
   restByTier: { ...DEFAULT_REST_BY_TIER },
+  plates: defaultPlateInventory(),
   setupComplete: false,
   haptics: true,
 }
@@ -23,7 +25,11 @@ export function clampRestSeconds(seconds: number): number {
 export function createInitialData(): AppData {
   return {
     version: DATA_VERSION,
-    settings: { ...DEFAULT_SETTINGS },
+    settings: {
+      ...DEFAULT_SETTINGS,
+      restByTier: { ...DEFAULT_REST_BY_TIER },
+      plates: normalizePlateInventory(DEFAULT_SETTINGS.plates),
+    },
     tracks: defaultTracks(),
     nextDayIndex: 0,
     sessions: [],

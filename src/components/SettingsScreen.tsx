@@ -4,6 +4,7 @@ import { useApp } from '../store/context'
 import { downloadBackup, readImportFile } from '../store/storage'
 import { DayWeightList } from './TrackWeightList'
 import { DownloadIcon, TrashIcon, UploadIcon } from './icons'
+import { PlateInventoryEditor } from './PlateInventoryEditor'
 import { RestTierPicker } from './RestTierPicker'
 
 export function SettingsScreen() {
@@ -37,6 +38,20 @@ export function SettingsScreen() {
     <div className="stack">
       <h1 className="screen-title">Settings</h1>
 
+      {PROGRAM_DAYS.map((day) => (
+        <section className="card" key={day.id}>
+          <h2 className="card-title">
+            {day.label} · {day.focus}
+          </h2>
+          <DayWeightList
+            day={day}
+            weightFor={(key) => data.tracks[key].weight}
+            stageFor={(key) => data.tracks[key].stage}
+            onChange={(key, weight) => dispatch({ type: 'updateTrackWeight', key, weight })}
+          />
+        </section>
+      ))}
+
       <section className="card">
         <h2 className="card-title">Rest timer</h2>
         <p className="muted small">
@@ -68,19 +83,16 @@ export function SettingsScreen() {
         </label>
       </section>
 
-      {PROGRAM_DAYS.map((day) => (
-        <section className="card" key={day.id}>
-          <h2 className="card-title">
-            {day.label} · {day.focus}
-          </h2>
-          <DayWeightList
-            day={day}
-            weightFor={(key) => data.tracks[key].weight}
-            stageFor={(key) => data.tracks[key].stage}
-            onChange={(key, weight) => dispatch({ type: 'updateTrackWeight', key, weight })}
-          />
-        </section>
-      ))}
+      <section className="card">
+        <h2 className="card-title">Bar & plates</h2>
+        <p className="muted small">
+          Used to show the plates to put on each side of the bar during a workout.
+        </p>
+        <PlateInventoryEditor
+          value={data.settings.plates}
+          onChange={(plates) => dispatch({ type: 'updateSettings', patch: { plates } })}
+        />
+      </section>
 
       <section className="card">
         <h2 className="card-title">Data</h2>

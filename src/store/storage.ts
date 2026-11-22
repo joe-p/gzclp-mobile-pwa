@@ -1,3 +1,4 @@
+import { defaultPlateInventory, normalizePlateInventory } from '../domain/plates'
 import { ALL_TRACK_KEYS, LIFTS } from '../domain/program'
 import type {
   ActiveSession,
@@ -5,6 +6,8 @@ import type {
   DayId,
   ExerciseRecord,
   LiftId,
+  PlateInventory,
+  PlateStack,
   ProgressionOutcome,
   SessionRecord,
   SetRecord,
@@ -101,6 +104,25 @@ function readActiveSession(value: unknown): ActiveSession | null {
 }
 
 /**
+ * Reads the plate inventory. Backups made before plates existed (no `plates`
+ * key) get the default gym loadout; an explicit inventory is respected even
+ * when every pair count is zero.
+ */
+function readPlateInventory(value: unknown): PlateInventory {
+  if (!isObject(value) || !Array.isArray(value.plates)) return defaultPlateInventory()
+
+  const plates: PlateStack[] = []
+  for (const entry of value.plates) {
+    if (!isObject(entry)) continue
+    const size = readNumber(entry.size, NaN)
+    if (!Number.isFinite(size) || size <= 0) continue
+    plates.push({ size, pairs: Math.max(0, Math.trunc(readNumber(entry.pairs, 0))) })
+  }
+
+  return normalizePlateInventory({ bar: readNumber(value.bar, 45), plates })
+}
+
+/**
  * Reads per-tier rest times, falling back to the pre-v2 single `restSeconds`
  * value (applied to every tier) and then to defaults.
  */
@@ -143,6 +165,7 @@ export function migrate(raw: unknown): AppData | null {
   const rawSettings = isObject(raw.settings) ? raw.settings : {}
   const settings: Settings = {
     restByTier: readRestByTier(rawSettings),
+    plates: readPlateInventory(rawSettings.plates),
     setupComplete: rawSettings.setupComplete === true,
     haptics: rawSettings.haptics !== false,
   }

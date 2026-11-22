@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { normalizePlateInventory } from '../domain/plates'
 import { ALL_TRACK_KEYS, PROGRAM_DAYS } from '../domain/program'
-import type { RestByTier, Tier, TrackKey } from '../domain/types'
+import type { PlateInventory, RestByTier, Tier, TrackKey } from '../domain/types'
 import { useApp } from '../store/context'
+import { PlateInventoryEditor } from './PlateInventoryEditor'
 import { RestTierPicker } from './RestTierPicker'
 import { TrackWeightList } from './TrackWeightList'
 
@@ -13,6 +15,7 @@ export function Onboarding() {
     return initial
   })
   const [restByTier, setRestByTier] = useState<RestByTier>(() => ({ ...data.settings.restByTier }))
+  const [plates, setPlates] = useState<PlateInventory>(() => normalizePlateInventory(data.settings.plates))
 
   const setWeight = (key: TrackKey, weight: number) => {
     setWeights((current) => ({ ...current, [key]: weight }))
@@ -58,6 +61,15 @@ export function Onboarding() {
         </section>
 
         <section className="card">
+          <h2 className="card-title">Bar & plates</h2>
+          <p className="muted small">
+            Tell the app what you load. During a workout it will show the plates to put on each side
+            for every working weight.
+          </p>
+          <PlateInventoryEditor value={plates} onChange={setPlates} />
+        </section>
+
+        <section className="card">
           <h2 className="card-title">Rest timer</h2>
           <p className="muted small">
             Starts automatically whenever you log a set, using the rest time for that tier.
@@ -68,7 +80,7 @@ export function Onboarding() {
         <button
           type="button"
           className="btn btn-primary btn-block start-btn"
-          onClick={() => dispatch({ type: 'saveSetup', weights, restByTier })}
+          onClick={() => dispatch({ type: 'saveSetup', weights, restByTier, plates })}
         >
           Start training
         </button>

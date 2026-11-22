@@ -1,3 +1,4 @@
+import { normalizePlateInventory } from '../domain/plates'
 import { PROGRAM_DAYS, TIERS, trackKey } from '../domain/program'
 import { applyProgression, exerciseSucceeded } from '../domain/progression'
 import { createSession, isExerciseComplete, recordAmrapResult, recordSetResult, sessionProgress } from '../domain/session'
@@ -5,6 +6,7 @@ import type {
   ActiveSession,
   AppData,
   ExerciseRecord,
+  PlateInventory,
   RestByTier,
   SessionRecord,
   Settings,
@@ -14,7 +16,12 @@ import { sanitizeWeight } from '../domain/units'
 import { clampRestSeconds, createInitialData } from './defaults'
 
 export type Action =
-  | { type: 'saveSetup'; weights: Record<TrackKey, number>; restByTier: RestByTier }
+  | {
+      type: 'saveSetup'
+      weights: Record<TrackKey, number>
+      restByTier: RestByTier
+      plates: PlateInventory
+    }
   | { type: 'startSession' }
   | { type: 'discardSession' }
   | { type: 'showExercise'; index: number }
@@ -83,6 +90,7 @@ export function reducer(state: AppData, action: Action): AppData {
           ...state.settings,
           setupComplete: true,
           restByTier: normalizeRestByTier(action.restByTier),
+          plates: normalizePlateInventory(action.plates),
         },
       }
     }
@@ -164,6 +172,7 @@ export function reducer(state: AppData, action: Action): AppData {
         settings: {
           ...settings,
           restByTier: normalizeRestByTier(settings.restByTier ?? state.settings.restByTier),
+          plates: normalizePlateInventory(settings.plates ?? state.settings.plates),
         },
       }
     }

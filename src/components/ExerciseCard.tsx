@@ -3,6 +3,7 @@ import { LIFTS, schemeLabel, stageSpec } from '../domain/program'
 import type { ExerciseRecord } from '../domain/types'
 import { formatWeight } from '../domain/units'
 import { ChevronIcon } from './icons'
+import { PlateBreakdown } from './PlateBreakdown'
 import { SetRow } from './SetRow'
 
 interface ExerciseCardProps {
@@ -63,6 +64,8 @@ export function ExerciseCard({ exercise, expanded, onToggle, onMarkSet, onLogAmr
 
       {expanded && (
         <div className="exercise-body">
+          <PlateBreakdown liftId={exercise.liftId} weight={exercise.weight} />
+
           <ul className="set-list">
             {exercise.sets.map((set, index) => (
               <SetRow

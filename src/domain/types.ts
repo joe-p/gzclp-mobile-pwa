@@ -82,8 +82,21 @@ export interface ActiveSession extends SessionRecord {
 
 export type RestByTier = Record<Tier, number>
 
+/** A plate size and how many *pairs* of it the user owns. */
+export interface PlateStack {
+  size: number
+  pairs: number
+}
+
+export interface PlateInventory {
+  /** Bar weight in pounds. */
+  bar: number
+  plates: PlateStack[]
+}
+
 export interface Settings {
   restByTier: RestByTier
+  plates: PlateInventory
   setupComplete: boolean
   haptics: boolean
 }
