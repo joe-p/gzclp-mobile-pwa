@@ -14,10 +14,12 @@ function AddAccessoryForm({ dayId }: { dayId: DayId }) {
   const [name, setName] = useState('')
   const [barbell, setBarbell] = useState(false)
 
+  const trimmed = name.trim()
+  const canAdd = trimmed.length > 0
+
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const trimmed = name.trim()
-    if (!trimmed) return
+    if (!canAdd) return
     dispatch({ type: 'addT3', dayId, name: trimmed, barbell })
     setName('')
     setBarbell(false)
@@ -25,14 +27,6 @@ function AddAccessoryForm({ dayId }: { dayId: DayId }) {
 
   return (
     <form className="accessory-add" onSubmit={submit}>
-      <input
-        className="accessory-input"
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        placeholder="Add T3 exercise"
-        aria-label={`New T3 exercise for ${dayId}`}
-        maxLength={40}
-      />
       <label className="accessory-check">
         <input
           type="checkbox"
@@ -41,9 +35,18 @@ function AddAccessoryForm({ dayId }: { dayId: DayId }) {
         />
         Barbell
       </label>
-      <button type="submit" className="btn btn-ghost accessory-submit" disabled={!name.trim()}>
+      <input
+        className="accessory-input"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        placeholder={barbell ? 'e.g. Curl' : 'Add T3 exercise'}
+        aria-label={`New T3 exercise for ${dayId}`}
+        maxLength={40}
+      />
+      <button type="submit" className="btn btn-ghost accessory-submit" disabled={!canAdd}>
         Add
       </button>
+      {barbell && <p className="accessory-note">“Barbell” is added automatically.</p>}
     </form>
   )
 }

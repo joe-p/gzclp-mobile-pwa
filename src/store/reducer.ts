@@ -1,5 +1,6 @@
 import { normalizePlateInventory } from '../domain/plates'
 import {
+  barbellLiftName,
   defaultWeightFor,
   newCustomLiftId,
   normalizeLiftName,
@@ -202,7 +203,7 @@ export function reducer(state: AppData, action: Action): AppData {
     }
 
     case 'addT3': {
-      const name = normalizeLiftName(action.name)
+      const name = action.barbell ? barbellLiftName(action.name) : normalizeLiftName(action.name)
       if (name.length === 0) return state
 
       // Reusing a lift by name gives the same accessory one shared progression

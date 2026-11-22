@@ -212,7 +212,7 @@ describe('reducer T3 accessories', () => {
     let state = onboarded()
     state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'Leg Press', barbell: false })
     const id = liftIdFor(state, 'Leg Press')
-    state = reducer(state, { type: 'addT3', dayId: 'A2', name: 'leg press', barbell: true })
+    state = reducer(state, { type: 'addT3', dayId: 'A2', name: 'leg press', barbell: false })
 
     expect(state.t3ByDay.A2).toContain(id)
     expect(
@@ -240,11 +240,33 @@ describe('reducer T3 accessories', () => {
   it('reuses a built-in lift and its weight when re-added by name', () => {
     let state = onboarded()
     state = reducer(state, { type: 'removeT3', dayId: 'A1', liftId: 'latpulldown' })
-    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'lat pulldown', barbell: true })
+    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'lat pulldown', barbell: false })
 
     expect(state.t3ByDay.A1).toEqual(['latpulldown'])
     expect(state.lifts.latpulldown.barbell).toBe(false)
     expect(state.tracks['latpulldown:T3']).toEqual({ weight: 70, stage: 0 })
+  })
+
+  it('automatically prefixes barbell accessories with "Barbell"', () => {
+    const before = onboarded()
+    const added = reducer(before, { type: 'addT3', dayId: 'A1', name: ' Curl ', barbell: true })
+    const id = liftIdFor(added, 'Barbell Curl')
+
+    expect(added.lifts[id].barbell).toBe(true)
+    expect(added.t3ByDay.A1).toContain(id)
+  })
+
+  it('does not add the Barbell prefix twice', () => {
+    const before = onboarded()
+    const added = reducer(before, {
+      type: 'addT3',
+      dayId: 'A1',
+      name: 'barbell curl',
+      barbell: true,
+    })
+    const id = liftIdFor(added, 'barbell curl')
+
+    expect(added.lifts[id].name).toBe('barbell curl')
   })
 
   it('ignores blank and duplicate additions', () => {
@@ -252,7 +274,7 @@ describe('reducer T3 accessories', () => {
     expect(reducer(before, { type: 'addT3', dayId: 'A1', name: '   ', barbell: false })).toBe(before)
 
     const added = reducer(before, { type: 'addT3', dayId: 'A1', name: 'Leg Press', barbell: false })
-    expect(reducer(added, { type: 'addT3', dayId: 'A1', name: ' leg press ', barbell: true })).toBe(
+    expect(reducer(added, { type: 'addT3', dayId: 'A1', name: ' leg press ', barbell: false })).toBe(
       added,
     )
   })

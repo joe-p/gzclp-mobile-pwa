@@ -74,6 +74,7 @@ public/         icons, manifest assets
 ## Notes
 
 - All weights are pounds, rounded to 5 lb plate jumps.
-- Custom T3 exercises start at 45 lb and can be marked as barbell-loaded so plate math is shown.
+- Custom T3 exercises start at 45 lb and can be marked as barbell-loaded so plate math is shown;
+  the "Barbell" prefix is added automatically.
 - Progression is applied only when a session is finished, never mid-set.
 - Resets round to the nearest 5 lb with an empty-bar floor.

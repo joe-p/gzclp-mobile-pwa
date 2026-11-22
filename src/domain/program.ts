@@ -81,6 +81,18 @@ export function normalizeLiftName(name: string): string {
   return name.trim().replace(/\s+/g, ' ').slice(0, 50)
 }
 
+/** Names for barbell-loaded accessories must start with the word "Barbell". */
+export function startsWithBarbell(name: string): boolean {
+  return /^barbell\b/i.test(normalizeLiftName(name))
+}
+
+/** Adds the Barbell prefix once, so users can type just the exercise name. */
+export function barbellLiftName(name: string): string {
+  const normalized = normalizeLiftName(name)
+  if (normalized.length === 0 || startsWithBarbell(normalized)) return normalized
+  return normalizeLiftName(`Barbell ${normalized}`)
+}
+
 /** Short label used in compact contexts. */
 export function shortForName(name: string): string {
   const words = normalizeLiftName(name).split(' ').filter(Boolean)

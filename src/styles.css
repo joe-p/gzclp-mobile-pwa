@@ -1371,7 +1371,7 @@ button {
 
 .accessory-add {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   margin-top: 14px;
@@ -1415,6 +1415,13 @@ button {
 .accessory-submit {
   min-height: 40px;
   padding: 0 14px;
+}
+
+.accessory-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
 }
 
 .weight-meta {
@@ -1730,11 +1737,16 @@ button {
   }
 
   .accessory-add {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px;
   }
 
-  .accessory-input {
-    grid-column: 1 / -1;
+  .accessory-check {
+    font-size: 0.72rem;
+  }
+
+  .accessory-submit {
+    padding: 0 10px;
   }
 }
 
