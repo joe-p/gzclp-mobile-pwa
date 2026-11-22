@@ -1,16 +1,9 @@
 import { useRef, useState } from 'react'
-import { REST_CHOICES } from '../domain/program'
-import type { Tier } from '../domain/types'
+import { PROGRAM_DAYS, REST_CHOICES } from '../domain/program'
 import { useApp } from '../store/context'
 import { downloadBackup, readImportFile } from '../store/storage'
+import { DayWeightList } from './TrackWeightList'
 import { DownloadIcon, TrashIcon, UploadIcon } from './icons'
-import { TrackWeightList } from './TrackWeightList'
-
-const TIER_SECTIONS: readonly { tier: Tier; title: string; blurb: string }[] = [
-  { tier: 'T1', title: 'T1 · main lifts', blurb: '5×3 → 6×2 → 10×1, last set AMRAP' },
-  { tier: 'T2', title: 'T2 · secondary lifts', blurb: '3×10 → 3×8 → 3×6, last set AMRAP' },
-  { tier: 'T3', title: 'T3 · accessories', blurb: '3×15+, manual weight only' },
-]
 
 export function SettingsScreen() {
   const { data, dispatch } = useApp()
@@ -75,12 +68,13 @@ export function SettingsScreen() {
         </label>
       </section>
 
-      {TIER_SECTIONS.map(({ tier, title, blurb }) => (
-        <section className="card" key={tier}>
-          <h2 className="card-title">{title}</h2>
-          <p className="muted small">{blurb}</p>
-          <TrackWeightList
-            tier={tier}
+      {PROGRAM_DAYS.map((day) => (
+        <section className="card" key={day.id}>
+          <h2 className="card-title">
+            {day.label} · {day.focus}
+          </h2>
+          <DayWeightList
+            day={day}
             weightFor={(key) => data.tracks[key].weight}
             stageFor={(key) => data.tracks[key].stage}
             onChange={(key, weight) => dispatch({ type: 'updateTrackWeight', key, weight })}
