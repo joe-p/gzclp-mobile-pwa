@@ -157,4 +157,6 @@ export function slotsForTier(tier: Tier): readonly { liftId: LiftId; key: TrackK
   )
 }
 
+export const TIERS: readonly Tier[] = ['T1', 'T2', 'T3']
+
 export const REST_CHOICES: readonly number[] = [60, 120, 180, 300]

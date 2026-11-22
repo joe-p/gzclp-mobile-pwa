@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
-import { PROGRAM_DAYS, REST_CHOICES } from '../domain/program'
+import { PROGRAM_DAYS } from '../domain/program'
 import { useApp } from '../store/context'
 import { downloadBackup, readImportFile } from '../store/storage'
 import { DayWeightList } from './TrackWeightList'
 import { DownloadIcon, TrashIcon, UploadIcon } from './icons'
+import { RestTierPicker } from './RestTierPicker'
 
 export function SettingsScreen() {
   const { data, dispatch } = useApp()
@@ -38,19 +39,18 @@ export function SettingsScreen() {
 
       <section className="card">
         <h2 className="card-title">Rest timer</h2>
-        <p className="muted small">Countdown starts automatically when you log a set.</p>
-        <div className="chip-row">
-          {REST_CHOICES.map((seconds) => (
-            <button
-              key={seconds}
-              type="button"
-              className={`chip ${data.settings.restSeconds === seconds ? 'is-selected' : ''}`}
-              onClick={() => dispatch({ type: 'updateSettings', patch: { restSeconds: seconds } })}
-            >
-              {seconds / 60}:00
-            </button>
-          ))}
-        </div>
+        <p className="muted small">
+          Countdown starts automatically when you log a set, using the rest time for that tier.
+        </p>
+        <RestTierPicker
+          value={data.settings.restByTier}
+          onChange={(tier, seconds) =>
+            dispatch({
+              type: 'updateSettings',
+              patch: { restByTier: { ...data.settings.restByTier, [tier]: seconds } },
+            })
+          }
+        />
 
         <label className="toggle-row">
           <span>

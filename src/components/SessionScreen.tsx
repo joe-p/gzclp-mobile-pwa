@@ -1,9 +1,10 @@
 import { PROGRAM_DAYS } from '../domain/program'
+import type { Tier } from '../domain/types'
 import { useApp } from '../store/context'
 import { ExerciseCard } from './ExerciseCard'
 
 interface SessionScreenProps {
-  onSetLogged: () => void
+  onSetLogged: (tier: Tier) => void
 }
 
 export function SessionScreen({ onSetLogged }: SessionScreenProps) {
@@ -41,11 +42,11 @@ export function SessionScreen({ onSetLogged }: SessionScreenProps) {
           }
           onMarkSet={(setIndex, success) => {
             dispatch({ type: 'recordSet', exerciseIndex: index, setIndex, success })
-            if (success !== null) onSetLogged()
+            if (success !== null) onSetLogged(exercise.tier)
           }}
           onLogAmrap={(reps) => {
             dispatch({ type: 'recordAmrap', exerciseIndex: index, reps })
-            onSetLogged()
+            onSetLogged(exercise.tier)
           }}
         />
       ))}

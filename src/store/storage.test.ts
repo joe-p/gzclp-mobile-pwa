@@ -24,8 +24,28 @@ describe('migrate', () => {
     expect(data?.tracks['bench:T1'].weight).toBe(initial.tracks['bench:T1'].weight)
     expect(data?.nextDayIndex).toBe(3)
     expect(data?.settings.setupComplete).toBe(true)
-    expect(data?.settings.restSeconds).toBe(120)
+    expect(data?.settings.restByTier).toEqual({ T1: 180, T2: 120, T3: 60 })
     expect(data?.settings.haptics).toBe(true)
+  })
+
+  it('applies a legacy single rest time to every tier', () => {
+    const data = migrate({
+      version: 1,
+      settings: { setupComplete: true, restSeconds: 240 },
+      tracks: {},
+    })
+
+    expect(data?.settings.restByTier).toEqual({ T1: 240, T2: 240, T3: 240 })
+  })
+
+  it('reads and clamps per-tier rest times', () => {
+    const data = migrate({
+      version: 2,
+      settings: { setupComplete: true, restByTier: { T1: 300, T2: -5, T3: 5000 } },
+      tracks: {},
+    })
+
+    expect(data?.settings.restByTier).toEqual({ T1: 300, T2: 0, T3: 900 })
   })
 
   it('drops malformed sessions and dangling summary ids', () => {
@@ -40,7 +60,7 @@ describe('migrate', () => {
 
   it('round-trips an exported backup', () => {
     const initial = createInitialData()
-    initial.settings = { ...initial.settings, setupComplete: true, restSeconds: 180 }
+    initial.settings = { ...initial.settings, setupComplete: true, restByTier: { T1: 300, T2: 180, T3: 60 } }
     expect(parseImportText(JSON.stringify(initial))).toEqual(initial)
   })
 

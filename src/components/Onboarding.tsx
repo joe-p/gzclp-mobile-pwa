@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ALL_TRACK_KEYS, PROGRAM_DAYS, REST_CHOICES } from '../domain/program'
-import type { TrackKey } from '../domain/types'
+import { ALL_TRACK_KEYS, PROGRAM_DAYS } from '../domain/program'
+import type { RestByTier, Tier, TrackKey } from '../domain/types'
 import { useApp } from '../store/context'
+import { RestTierPicker } from './RestTierPicker'
 import { TrackWeightList } from './TrackWeightList'
 
 export function Onboarding() {
@@ -11,10 +12,14 @@ export function Onboarding() {
     for (const key of ALL_TRACK_KEYS) initial[key] = data.tracks[key].weight
     return initial
   })
-  const [restSeconds, setRestSeconds] = useState(data.settings.restSeconds)
+  const [restByTier, setRestByTier] = useState<RestByTier>(() => ({ ...data.settings.restByTier }))
 
   const setWeight = (key: TrackKey, weight: number) => {
     setWeights((current) => ({ ...current, [key]: weight }))
+  }
+
+  const setRest = (tier: Tier, seconds: number) => {
+    setRestByTier((current) => ({ ...current, [tier]: seconds }))
   }
 
   const firstDay = PROGRAM_DAYS[0]
@@ -54,25 +59,16 @@ export function Onboarding() {
 
         <section className="card">
           <h2 className="card-title">Rest timer</h2>
-          <p className="muted small">Starts automatically whenever you log a set.</p>
-          <div className="chip-row">
-            {REST_CHOICES.map((seconds) => (
-              <button
-                key={seconds}
-                type="button"
-                className={`chip ${restSeconds === seconds ? 'is-selected' : ''}`}
-                onClick={() => setRestSeconds(seconds)}
-              >
-                {seconds / 60}:00
-              </button>
-            ))}
-          </div>
+          <p className="muted small">
+            Starts automatically whenever you log a set, using the rest time for that tier.
+          </p>
+          <RestTierPicker value={restByTier} onChange={setRest} />
         </section>
 
         <button
           type="button"
           className="btn btn-primary btn-block start-btn"
-          onClick={() => dispatch({ type: 'saveSetup', weights, restSeconds })}
+          onClick={() => dispatch({ type: 'saveSetup', weights, restByTier })}
         >
           Start training
         </button>

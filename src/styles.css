@@ -399,6 +399,27 @@ button {
   gap: 8px;
 }
 
+.rest-tier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.rest-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rest-tier-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .chip {
   min-height: 40px;
   padding: 9px 6px;

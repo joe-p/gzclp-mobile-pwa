@@ -80,8 +80,10 @@ export interface ActiveSession extends SessionRecord {
   exerciseIndex: number
 }
 
+export type RestByTier = Record<Tier, number>
+
 export interface Settings {
-  restSeconds: number
+  restByTier: RestByTier
   setupComplete: boolean
   haptics: boolean
 }

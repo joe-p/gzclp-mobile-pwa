@@ -10,6 +10,7 @@ import { SettingsScreen } from './components/SettingsScreen'
 import { StartSessionCard } from './components/StartSessionCard'
 import { SummarySheet } from './components/SummarySheet'
 import { TopBar } from './components/TopBar'
+import type { Tier } from './domain/types'
 import { AppProvider } from './store/AppProvider'
 import { useApp } from './store/context'
 
@@ -18,12 +19,15 @@ function Shell() {
   const [tab, setTab] = useState<Tab>('workout')
   const [rest, setRest] = useState<{ endsAt: number; total: number; sessionId: string } | null>(null)
 
-  const startRest = useCallback(() => {
-    const seconds = data.settings.restSeconds
-    const sessionId = data.activeSession?.id
-    if (seconds <= 0 || !sessionId) return
-    setRest({ endsAt: Date.now() + seconds * 1000, total: seconds, sessionId })
-  }, [data.settings.restSeconds, data.activeSession?.id])
+  const startRest = useCallback(
+    (tier: Tier) => {
+      const seconds = data.settings.restByTier[tier] ?? 0
+      const sessionId = data.activeSession?.id
+      if (seconds <= 0 || !sessionId) return
+      setRest({ endsAt: Date.now() + seconds * 1000, total: seconds, sessionId })
+    },
+    [data.settings.restByTier, data.activeSession?.id],
+  )
 
   // Stale timers from a finished session are ignored rather than cleared in an effect.
   const activeRest = rest && rest.sessionId === data.activeSession?.id ? rest : null

@@ -15,7 +15,7 @@ linear progression program. Built to be used one-handed between sets.
   - Miss any set → move to the next rep scheme at the same weight.
   - Fail the final scheme → reset to the first scheme at ~90% of the working weight.
   - T3 accessories never change weight automatically.
-- **Rest timer** starts when you log a set, with +30 s and optional vibration.
+- **Rest timer** starts when you log a set, with a configurable time per tier (T1/T2/T3), +30 s, and optional vibration.
 - **History** of every session: sets, AMRAP reps, e1RM, and the weight earned for next time.
 - **Resumable sessions** — reloading the app mid-workout picks up where you left off.
 - **Interrupted workout?** Finish early; unfinished lifts keep their current weight.

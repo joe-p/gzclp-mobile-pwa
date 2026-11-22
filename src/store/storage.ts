@@ -12,13 +12,12 @@ import type {
   Tier,
 } from '../domain/types'
 import { sanitizeWeight } from '../domain/units'
-import { createInitialData, DATA_VERSION, DEFAULT_SETTINGS } from './defaults'
+import { clampRestSeconds, createInitialData, DATA_VERSION, DEFAULT_REST_BY_TIER } from './defaults'
 
 export const STORAGE_KEY = 'gzclp.data.v1'
 
 const DAY_IDS: readonly DayId[] = ['A1', 'B1', 'A2', 'B2']
 const TIERS: readonly Tier[] = ['T1', 'T2', 'T3']
-const MAX_REST_SECONDS = 900
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -102,6 +101,27 @@ function readActiveSession(value: unknown): ActiveSession | null {
 }
 
 /**
+ * Reads per-tier rest times, falling back to the pre-v2 single `restSeconds`
+ * value (applied to every tier) and then to defaults.
+ */
+function readRestByTier(rawSettings: Record<string, unknown>): Settings['restByTier'] {
+  const legacy = readNumber(rawSettings.restSeconds, NaN)
+  const perTier = isObject(rawSettings.restByTier) ? rawSettings.restByTier : null
+  const restByTier = { ...DEFAULT_REST_BY_TIER }
+
+  for (const tier of TIERS) {
+    const stored = perTier?.[tier]
+    if (typeof stored === 'number' && Number.isFinite(stored)) {
+      restByTier[tier] = clampRestSeconds(stored)
+    } else if (Number.isFinite(legacy)) {
+      restByTier[tier] = clampRestSeconds(legacy)
+    }
+  }
+
+  return restByTier
+}
+
+/**
  * Normalizes anything loaded from storage or a backup file. Returns null when
  * the payload is not plausibly a GZCLP backup, otherwise fills in every track
  * so new lifts added in a future version appear with defaults.
@@ -122,10 +142,7 @@ export function migrate(raw: unknown): AppData | null {
 
   const rawSettings = isObject(raw.settings) ? raw.settings : {}
   const settings: Settings = {
-    restSeconds: Math.min(
-      MAX_REST_SECONDS,
-      Math.max(0, Math.trunc(readNumber(rawSettings.restSeconds, DEFAULT_SETTINGS.restSeconds))),
-    ),
+    restByTier: readRestByTier(rawSettings),
     setupComplete: rawSettings.setupComplete === true,
     haptics: rawSettings.haptics !== false,
   }

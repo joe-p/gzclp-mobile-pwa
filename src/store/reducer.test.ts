@@ -8,7 +8,7 @@ function setup(): AppData {
   const weights = Object.fromEntries(
     Object.entries(state.tracks).map(([key, track]) => [key, track.weight]),
   ) as Record<TrackKey, number>
-  state = reducer(state, { type: 'saveSetup', weights, restSeconds: 120 })
+  state = reducer(state, { type: 'saveSetup', weights, restByTier: { T1: 180, T2: 120, T3: 60 } })
   state = reducer(state, { type: 'startSession' })
   return state
 }

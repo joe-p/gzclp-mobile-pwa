@@ -1,19 +1,20 @@
-import { PROGRAM_DAYS, trackKey } from '../domain/program'
+import { PROGRAM_DAYS, TIERS, trackKey } from '../domain/program'
 import { applyProgression, exerciseSucceeded } from '../domain/progression'
 import { createSession, isExerciseComplete, recordAmrapResult, recordSetResult, sessionProgress } from '../domain/session'
 import type {
   ActiveSession,
   AppData,
   ExerciseRecord,
+  RestByTier,
   SessionRecord,
   Settings,
   TrackKey,
 } from '../domain/types'
 import { sanitizeWeight } from '../domain/units'
-import { createInitialData } from './defaults'
+import { clampRestSeconds, createInitialData } from './defaults'
 
 export type Action =
-  | { type: 'saveSetup'; weights: Record<TrackKey, number>; restSeconds: number }
+  | { type: 'saveSetup'; weights: Record<TrackKey, number>; restByTier: RestByTier }
   | { type: 'startSession' }
   | { type: 'discardSession' }
   | { type: 'showExercise'; index: number }
@@ -57,6 +58,14 @@ function nextIncompleteLift(session: ActiveSession, completedIndex: number): num
   return -1
 }
 
+function normalizeRestByTier(restByTier: RestByTier): RestByTier {
+  const normalized = {} as RestByTier
+  for (const tier of TIERS) {
+    normalized[tier] = clampRestSeconds(restByTier[tier])
+  }
+  return normalized
+}
+
 export function reducer(state: AppData, action: Action): AppData {
   switch (action.type) {
     case 'saveSetup': {
@@ -73,7 +82,7 @@ export function reducer(state: AppData, action: Action): AppData {
         settings: {
           ...state.settings,
           setupComplete: true,
-          restSeconds: Math.min(900, Math.max(0, Math.trunc(action.restSeconds))),
+          restByTier: normalizeRestByTier(action.restByTier),
         },
       }
     }
@@ -148,8 +157,16 @@ export function reducer(state: AppData, action: Action): AppData {
     case 'dismissSummary':
       return { ...state, lastSummaryId: null }
 
-    case 'updateSettings':
-      return { ...state, settings: { ...state.settings, ...action.patch } }
+    case 'updateSettings': {
+      const settings = { ...state.settings, ...action.patch }
+      return {
+        ...state,
+        settings: {
+          ...settings,
+          restByTier: normalizeRestByTier(settings.restByTier ?? state.settings.restByTier),
+        },
+      }
+    }
 
     case 'updateTrackWeight': {
       const track = state.tracks[action.key]
