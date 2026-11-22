@@ -18,6 +18,7 @@ export function ExerciseCard({ exercise, expanded, onToggle, onMarkSet, onLogAmr
   const spec = stageSpec(exercise.tier, exercise.stage)
   const logged = exercise.sets.filter((set) => set.success !== null).length
   const complete = exercise.sets.every((set) => set.success !== null)
+  const missed = exercise.sets.some((set) => set.success === false)
   const outcome = complete
     ? applyProgression(
         exercise.liftId,
@@ -45,8 +46,17 @@ export function ExerciseCard({ exercise, expanded, onToggle, onMarkSet, onLogAmr
           {formatWeight(exercise.weight)}
           <small>lb</small>
         </span>
-        <span className={`exercise-count ${complete ? 'is-done' : ''}`} aria-label={`${logged} of ${exercise.sets.length} sets logged`}>
-          {complete ? '✓' : `${logged}/${exercise.sets.length}`}
+        <span
+          className={`exercise-count ${complete ? (missed ? 'is-missed' : 'is-done') : ''}`}
+          aria-label={
+            complete
+              ? missed
+                ? `All ${exercise.sets.length} sets logged, at least one missed`
+                : `All ${exercise.sets.length} sets hit`
+              : `${logged} of ${exercise.sets.length} sets logged`
+          }
+        >
+          {complete ? (missed ? '✗' : '✓') : `${logged}/${exercise.sets.length}`}
         </span>
         <ChevronIcon open={expanded} />
       </button>

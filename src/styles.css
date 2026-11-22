@@ -665,6 +665,10 @@ button {
   color: var(--ok);
 }
 
+.exercise-count.is-missed {
+  color: var(--miss);
+}
+
 .chevron {
   width: 18px;
   height: 18px;
