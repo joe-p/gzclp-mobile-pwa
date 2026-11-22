@@ -1,7 +1,14 @@
 import { PROGRAM_DAYS, trackKey } from '../domain/program'
 import { applyProgression, exerciseSucceeded } from '../domain/progression'
 import { createSession, isExerciseComplete, recordAmrapResult, recordSetResult, sessionProgress } from '../domain/session'
-import type { AppData, ExerciseRecord, SessionRecord, Settings, TrackKey } from '../domain/types'
+import type {
+  ActiveSession,
+  AppData,
+  ExerciseRecord,
+  SessionRecord,
+  Settings,
+  TrackKey,
+} from '../domain/types'
 import { sanitizeWeight } from '../domain/units'
 import { createInitialData } from './defaults'
 
@@ -18,6 +25,37 @@ export type Action =
   | { type: 'updateTrackWeight'; key: TrackKey; weight: number }
   | { type: 'importData'; data: AppData }
   | { type: 'resetData' }
+
+/**
+ * Applies a set result and, when that finishes the lift, collapses it and expands
+ * the next unfinished lift (wrapping to the top, or collapsing all when done).
+ */
+function recordAndAdvance(
+  state: AppData,
+  exerciseIndex: number,
+  record: (session: ActiveSession) => ActiveSession,
+): AppData {
+  const session = state.activeSession
+  const current = session?.exercises[exerciseIndex]
+  if (!session || !current) return state
+
+  const wasComplete = isExerciseComplete(current)
+  const next = record(session)
+  if (next === session) return state
+  if (wasComplete || !isExerciseComplete(next.exercises[exerciseIndex])) {
+    return { ...state, activeSession: next }
+  }
+
+  return { ...state, activeSession: { ...next, exerciseIndex: nextIncompleteLift(next, exerciseIndex) } }
+}
+
+function nextIncompleteLift(session: ActiveSession, completedIndex: number): number {
+  for (let step = 1; step <= session.exercises.length; step++) {
+    const index = (completedIndex + step) % session.exercises.length
+    if (!isExerciseComplete(session.exercises[index])) return index
+  }
+  return -1
+}
 
 export function reducer(state: AppData, action: Action): AppData {
   switch (action.type) {
@@ -60,23 +98,15 @@ export function reducer(state: AppData, action: Action): AppData {
       return { ...state, activeSession: { ...session, exerciseIndex: index } }
     }
 
-    case 'recordSet': {
-      const session = state.activeSession
-      if (!session) return state
-      return {
-        ...state,
-        activeSession: recordSetResult(session, action.exerciseIndex, action.setIndex, action.success),
-      }
-    }
+    case 'recordSet':
+      return recordAndAdvance(state, action.exerciseIndex, (session) =>
+        recordSetResult(session, action.exerciseIndex, action.setIndex, action.success),
+      )
 
-    case 'recordAmrap': {
-      const session = state.activeSession
-      if (!session) return state
-      return {
-        ...state,
-        activeSession: recordAmrapResult(session, action.exerciseIndex, action.reps),
-      }
-    }
+    case 'recordAmrap':
+      return recordAndAdvance(state, action.exerciseIndex, (session) =>
+        recordAmrapResult(session, action.exerciseIndex, action.reps),
+      )
 
     case 'finishSession': {
       const session = state.activeSession

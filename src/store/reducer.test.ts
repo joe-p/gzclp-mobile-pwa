@@ -73,6 +73,61 @@ describe('reducer session lifecycle', () => {
     })
   })
 
+  it('keeps a lift open until its final set, then expands the next lift', () => {
+    let state = setup()
+    const first = state.activeSession?.exercises[0]
+    if (!first) throw new Error('exercise missing')
+
+    first.sets.slice(0, -1).forEach((_, setIndex) => {
+      state = reducer(state, { type: 'recordSet', exerciseIndex: 0, setIndex, success: true })
+      expect(state.activeSession?.exerciseIndex).toBe(0)
+    })
+
+    state = reducer(state, { type: 'recordAmrap', exerciseIndex: 0, reps: first.sets[first.sets.length - 1].target })
+    expect(state.activeSession?.exerciseIndex).toBe(1)
+  })
+
+  it('expands the next lift when the AMRAP is the only thing left', () => {
+    let state = setup()
+    const first = state.activeSession?.exercises[0]
+    if (!first) throw new Error('exercise missing')
+    const lastIndex = first.sets.length - 1
+
+    first.sets.slice(0, lastIndex).forEach((_, setIndex) => {
+      state = reducer(state, { type: 'recordSet', exerciseIndex: 0, setIndex, success: true })
+    })
+    expect(state.activeSession?.exerciseIndex).toBe(0)
+
+    state = reducer(state, { type: 'recordAmrap', exerciseIndex: 0, reps: first.sets[lastIndex].target + 1 })
+    expect(state.activeSession?.exerciseIndex).toBe(1)
+  })
+
+  it('collapses every lift once the whole session is logged', () => {
+    let state = setup()
+    for (const index of [0, 1, 2]) state = logExercise(state, index, true)
+    expect(state.activeSession?.exerciseIndex).toBe(-1)
+  })
+
+  it('stays put when updating an already-finished lift', () => {
+    let state = setup()
+    state = logExercise(state, 0, true)
+    expect(state.activeSession?.exerciseIndex).toBe(1)
+
+    state = reducer(state, { type: 'showExercise', index: 0 })
+    state = reducer(state, { type: 'recordAmrap', exerciseIndex: 0, reps: 2 })
+    expect(state.activeSession?.exerciseIndex).toBe(0)
+  })
+
+  it('skips lifts that are already logged and wraps when needed', () => {
+    let state = setup()
+    state = logExercise(state, 1, true)
+    expect(state.activeSession?.exerciseIndex).toBe(2)
+
+    state = reducer(state, { type: 'showExercise', index: 0 })
+    state = logExercise(state, 0, true)
+    expect(state.activeSession?.exerciseIndex).toBe(2)
+  })
+
   it('saves a partial session without changing unfinished lifts', () => {
     let state = setup()
     state = reducer(state, { type: 'recordSet', exerciseIndex: 0, setIndex: 0, success: true })
