@@ -1,0 +1,85 @@
+import { useState } from 'react'
+import { ALL_TRACK_KEYS, PROGRAM_DAYS, REST_CHOICES } from '../domain/program'
+import type { TrackKey } from '../domain/types'
+import { useApp } from '../store/context'
+import { TrackWeightList } from './TrackWeightList'
+
+export function Onboarding() {
+  const { data, dispatch } = useApp()
+  const [weights, setWeights] = useState<Record<TrackKey, number>>(() => {
+    const initial = {} as Record<TrackKey, number>
+    for (const key of ALL_TRACK_KEYS) initial[key] = data.tracks[key].weight
+    return initial
+  })
+  const [restSeconds, setRestSeconds] = useState(data.settings.restSeconds)
+
+  const setWeight = (key: TrackKey, weight: number) => {
+    setWeights((current) => ({ ...current, [key]: weight }))
+  }
+
+  const firstDay = PROGRAM_DAYS[0]
+
+  return (
+    <div className="onboarding">
+      <div className="onboarding-inner">
+        <header className="onboarding-hero">
+          <span className="brand-mark large" aria-hidden="true">
+            GZ
+          </span>
+          <span className="eyebrow">GZCLP · 4-day linear progression</span>
+          <h1>Set your starting weights</h1>
+          <p className="muted">
+            Enter the weight you can lift today for the target reps. The app handles progression from
+            there — weight never changes mid-session.
+          </p>
+        </header>
+
+        <section className="card">
+          <h2 className="card-title">T1 · main lifts</h2>
+          <p className="muted small">5×3 with the last set AMRAP. Start near your 3–5 rep max.</p>
+          <TrackWeightList tier="T1" weightFor={(key) => weights[key]} onChange={setWeight} />
+        </section>
+
+        <section className="card">
+          <h2 className="card-title">T2 · secondary lifts</h2>
+          <p className="muted small">3×10 with the last set AMRAP. Around 60% of your T1 weight works well.</p>
+          <TrackWeightList tier="T2" weightFor={(key) => weights[key]} onChange={setWeight} />
+        </section>
+
+        <section className="card">
+          <h2 className="card-title">T3 · accessories</h2>
+          <p className="muted small">3×15+. No automatic weight changes — chase reps, then add weight.</p>
+          <TrackWeightList tier="T3" weightFor={(key) => weights[key]} onChange={setWeight} />
+        </section>
+
+        <section className="card">
+          <h2 className="card-title">Rest timer</h2>
+          <p className="muted small">Starts automatically whenever you log a set.</p>
+          <div className="chip-row">
+            {REST_CHOICES.map((seconds) => (
+              <button
+                key={seconds}
+                type="button"
+                className={`chip ${restSeconds === seconds ? 'is-selected' : ''}`}
+                onClick={() => setRestSeconds(seconds)}
+              >
+                {seconds / 60}:00
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <button
+          type="button"
+          className="btn btn-primary btn-block start-btn"
+          onClick={() => dispatch({ type: 'saveSetup', weights, restSeconds })}
+        >
+          Start training
+        </button>
+        <p className="muted tiny center">
+          First up: {firstDay.label} · {firstDay.focus}. Everything is editable in Settings.
+        </p>
+      </div>
+    </div>
+  )
+}
