@@ -1,9 +1,10 @@
-import { DumbbellIcon, HistoryIcon, SettingsIcon } from './icons'
+import { DumbbellIcon, HistoryIcon, OverviewIcon, SettingsIcon } from './icons'
 
-export type Tab = 'workout' | 'history' | 'settings'
+export type Tab = 'workout' | 'overview' | 'history' | 'settings'
 
 const TABS = [
   { id: 'workout', label: 'Workout', Icon: DumbbellIcon },
+  { id: 'overview', label: 'Overview', Icon: OverviewIcon },
   { id: 'history', label: 'History', Icon: HistoryIcon },
   { id: 'settings', label: 'Settings', Icon: SettingsIcon },
 ] as const
