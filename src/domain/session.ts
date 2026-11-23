@@ -10,6 +10,7 @@ import type {
   TrackKey,
   TrackState,
   WarmupMethod,
+  WarmupRecord,
 } from './types'
 
 export function newId(): string {
@@ -114,6 +115,22 @@ export function recordWarmupResult(
     index === warmupIndex ? { ...item, completed } : item,
   )
   return replaceExercise(session, exerciseIndex, { ...exercise, warmups })
+}
+
+/**
+ * True when checking off `warmupIndex` leaves no warmup set unchecked, i.e. the
+ * ramp is finished and it is time to rest before the first work set.
+ */
+export function finishesWarmupRamp(
+  warmups: readonly WarmupRecord[],
+  warmupIndex: number,
+): boolean {
+  return (
+    warmups.length > 0 &&
+    warmupIndex >= 0 &&
+    warmupIndex < warmups.length &&
+    warmups.every((warmup, index) => index === warmupIndex || warmup.completed)
+  )
 }
 
 export function recordAmrapResult(

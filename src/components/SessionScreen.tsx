@@ -1,4 +1,5 @@
 import { programDays } from '../domain/program'
+import { finishesWarmupRamp } from '../domain/session'
 import type { Tier } from '../domain/types'
 import { useApp } from '../store/context'
 import { ExerciseCard } from './ExerciseCard'
@@ -49,9 +50,18 @@ export function SessionScreen({ onSetLogged }: SessionScreenProps) {
             dispatch({ type: 'recordAmrap', exerciseIndex: index, reps })
             onSetLogged(exercise.tier)
           }}
-          onToggleWarmup={(warmupIndex, completed) =>
+          onToggleWarmup={(warmupIndex, completed) => {
             dispatch({ type: 'recordWarmup', exerciseIndex: index, warmupIndex, completed })
-          }
+            // Finishing the ramp starts the rest before the first work set, using
+            // this lift's tier (T1 warmups lead into the T1 timer, T2 into T2).
+            if (
+              completed &&
+              exercise.sets.some((set) => set.success === null) &&
+              finishesWarmupRamp(exercise.warmups, warmupIndex)
+            ) {
+              onSetLogged(exercise.tier)
+            }
+          }}
         />
       ))}
 

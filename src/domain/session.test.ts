@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { defaultTracks, PROGRAM_DAYS } from './program'
 import {
   createSession,
+  finishesWarmupRamp,
   isSessionComplete,
   recordAmrapResult,
   recordSetResult,
@@ -96,6 +97,30 @@ describe('set recording', () => {
 
     expect(recordWarmupResult(original, 0, 99, true)).toBe(original)
     expect(recordWarmupResult(original, 0, 0, false)).toBe(original)
+  })
+})
+
+describe('finishesWarmupRamp', () => {
+  const warmups = [
+    { weight: 45, reps: 5, completed: true },
+    { weight: 70, reps: 5, completed: true },
+    { weight: 115, reps: 2, completed: false },
+  ]
+
+  it('is true only for the warmup that leaves the ramp complete', () => {
+    expect(finishesWarmupRamp(warmups, 2)).toBe(true)
+    expect(finishesWarmupRamp(warmups, 1)).toBe(false)
+  })
+
+  it('handles out-of-order check-offs and empty ramps', () => {
+    const outOfOrder = [
+      { weight: 45, reps: 5, completed: true },
+      { weight: 70, reps: 5, completed: false },
+      { weight: 115, reps: 2, completed: true },
+    ]
+    expect(finishesWarmupRamp(outOfOrder, 1)).toBe(true)
+    expect(finishesWarmupRamp([], 0)).toBe(false)
+    expect(finishesWarmupRamp(warmups, 99)).toBe(false)
   })
 })
 
