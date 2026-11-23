@@ -41,27 +41,3 @@ export function restStatus(min: number, max: number, elapsed: number): RestStatu
   if (elapsed < max) return { phase: 'ready', toMin: 0, toMax, overtime, progress }
   return { phase: 'max', toMin: 0, toMax: 0, overtime, progress: 1 }
 }
-
-export interface RestAddition {
-  /** Extra seconds added while still blocked. */
-  min: number
-  /** Extra seconds added once the minimum was reached. */
-  max: number
-}
-
-/** Applies +30 s: extending before min shifts the whole window, after min it only delays the warning. */
-export function extendRest(
-  added: RestAddition,
-  phase: RestPhase,
-  step: number = REST_STEP_SECONDS,
-): RestAddition {
-  if (phase === 'blocked') return { min: added.min + step, max: added.max + step }
-  if (phase === 'ready') return { min: added.min, max: added.max + step }
-  return added
-}
-
-/** Effective min/max after the user's +30 s extensions. */
-export function restWindow(min: number, max: number, added: RestAddition): RestRange {
-  const effectiveMin = Math.max(0, min + added.min)
-  return { min: effectiveMin, max: Math.max(effectiveMin, max + added.max) }
-}

@@ -1311,6 +1311,13 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.rest-max {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .rest-spacer {
   flex: 1;
 }
@@ -1344,7 +1351,8 @@ button {
 }
 
 .rest-bar.is-ready .rest-time,
-.rest-bar.is-ready .rest-label {
+.rest-bar.is-ready .rest-label,
+.rest-bar.is-ready .rest-max {
   color: var(--accent);
 }
 
@@ -1353,7 +1361,8 @@ button {
 }
 
 .rest-bar.is-max .rest-time,
-.rest-bar.is-max .rest-label {
+.rest-bar.is-max .rest-label,
+.rest-bar.is-max .rest-max {
   color: var(--miss);
 }
 

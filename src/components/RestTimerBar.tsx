@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { extendRest, restStatus, restWindow } from '../domain/rest'
-import type { RestAddition, RestPhase } from '../domain/rest'
+import { restStatus } from '../domain/rest'
+import type { RestPhase } from '../domain/rest'
 import { formatDuration } from '../domain/units'
 
 interface RestTimerBarProps {
@@ -24,7 +24,6 @@ function vibrate(pattern: number | number[]): void {
 
 export function RestTimerBar({ startedAt, min, max, haptics, onDismiss }: RestTimerBarProps) {
   const [now, setNow] = useState(() => Date.now())
-  const [added, setAdded] = useState<RestAddition>({ min: 0, max: 0 })
   const lastPhaseRef = useRef<RestPhase | null>(null)
 
   useEffect(() => {
@@ -32,15 +31,14 @@ export function RestTimerBar({ startedAt, min, max, haptics, onDismiss }: RestTi
     return () => window.clearInterval(id)
   }, [])
 
-  const range = restWindow(min, max, added)
   const elapsed = Math.max(0, (now - startedAt) / 1000)
-  const status = restStatus(range.min, range.max, elapsed)
+  const status = restStatus(min, max, elapsed)
   const blocked = status.phase === 'blocked'
   const maxed = status.phase === 'max'
   const timeLabel = blocked
     ? formatDuration(status.toMin)
     : `+${formatDuration(status.overtime)}`
-  const markerLeft = range.max > 0 ? Math.min(100, (range.min / range.max) * 100) : 100
+  const markerLeft = max > 0 ? Math.min(100, (min / max) * 100) : 100
 
   useEffect(() => {
     const previous = lastPhaseRef.current
@@ -54,22 +52,18 @@ export function RestTimerBar({ startedAt, min, max, haptics, onDismiss }: RestTi
   return (
     <div className={`rest-bar is-${status.phase}`} role="status" aria-live="polite">
       <div className="rest-fill" style={{ width: `${status.progress * 100}%` }} />
-      {range.min < range.max && (
+      {min < max && (
         <div className="rest-mark" style={{ left: `${markerLeft}%` }} aria-hidden="true" />
       )}
       <div className="rest-inner">
         <span className="rest-label">{PHASE_LABELS[status.phase]}</span>
         <span className="rest-time">{timeLabel}</span>
-        <span className="rest-spacer" />
         {!maxed && (
-          <button
-            type="button"
-            className="chip-btn"
-            onClick={() => setAdded((current) => extendRest(current, status.phase))}
-          >
-            +30s
-          </button>
+          <span className="rest-max" title="Time left before max rest">
+            max {formatDuration(status.toMax)}
+          </span>
         )}
+        <span className="rest-spacer" />
         <button
           type="button"
           className="chip-btn"

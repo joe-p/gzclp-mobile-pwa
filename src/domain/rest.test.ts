@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  clampRestSeconds,
-  extendRest,
-  normalizeRestRange,
-  restStatus,
-  restWindow,
-} from './rest'
+import { clampRestSeconds, normalizeRestRange, restStatus } from './rest'
 
 describe('rest ranges', () => {
   it('clamps seconds and keeps max at or above min', () => {
@@ -42,17 +36,5 @@ describe('rest ranges', () => {
   it('handles an immediate-warning range with no gap', () => {
     expect(restStatus(60, 60, 59)).toMatchObject({ phase: 'blocked', toMin: 1 })
     expect(restStatus(60, 60, 60)).toMatchObject({ phase: 'max', overtime: 0 })
-  })
-
-  it('extends the whole window before min and only the warning after min', () => {
-    expect(extendRest({ min: 0, max: 0 }, 'blocked')).toEqual({ min: 30, max: 30 })
-    expect(extendRest({ min: 30, max: 30 }, 'ready')).toEqual({ min: 30, max: 60 })
-    expect(extendRest({ min: 30, max: 60 }, 'max')).toEqual({ min: 30, max: 60 })
-  })
-
-  it('applies additions without letting max fall below min', () => {
-    expect(restWindow(180, 300, { min: 0, max: 0 })).toEqual({ min: 180, max: 300 })
-    expect(restWindow(180, 300, { min: 30, max: 30 })).toEqual({ min: 210, max: 330 })
-    expect(restWindow(180, 300, { min: 30, max: 0 })).toEqual({ min: 210, max: 300 })
   })
 })
