@@ -5,6 +5,7 @@ import {
   finishesWarmupRamp,
   isSessionComplete,
   isSetLocked,
+  nextOpenSet,
   recordAmrapResult,
   recordSetResult,
   recordWarmupResult,
@@ -105,6 +106,35 @@ describe('set recording', () => {
     const afterFirst = recordSetResult(session, 0, 0, true)
     expect(isSetLocked(afterFirst.exercises[0].sets, 1)).toBe(false)
     expect(isSetLocked(afterFirst.exercises[0].sets, 2)).toBe(true)
+  })
+
+  it('points at the next set to log, crossing into the following lift', () => {
+    const session = base()
+    expect(nextOpenSet(session)).toEqual({ exerciseIndex: 0, setIndex: 0 })
+
+    const afterFirst = recordSetResult(session, 0, 0, true)
+    expect(nextOpenSet(afterFirst)).toEqual({ exerciseIndex: 0, setIndex: 1 })
+
+    let done = afterFirst
+    for (let setIndex = 1; setIndex < 4; setIndex += 1) {
+      done = recordSetResult(done, 0, setIndex, true)
+    }
+    expect(nextOpenSet(done)).toEqual({ exerciseIndex: 0, setIndex: 4 })
+
+    const afterAmrap = recordAmrapResult(done, 0, 5)
+    expect(nextOpenSet(afterAmrap)).toEqual({ exerciseIndex: 1, setIndex: 0 })
+  })
+
+  it('has no next set once everything is logged', () => {
+    let session = base()
+    for (let exerciseIndex = 0; exerciseIndex < session.exercises.length; exerciseIndex += 1) {
+      const setCount = session.exercises[exerciseIndex].sets.length
+      for (let setIndex = 0; setIndex < setCount - 1; setIndex += 1) {
+        session = recordSetResult(session, exerciseIndex, setIndex, true)
+      }
+      session = recordAmrapResult(session, exerciseIndex, 20)
+    }
+    expect(nextOpenSet(session)).toBeNull()
   })
 
   it('refuses a result while the set before it is still open', () => {

@@ -10,6 +10,8 @@ interface SetRowProps {
   locked: boolean
   /** 1-based number of the first set without a result, for the lock hint. */
   waitingOn: number | null
+  /** True while this set is the next one up but rest is still running. */
+  resting?: boolean
   onMark: (success: boolean | null) => void
   onLogAmrap: (reps: number) => void
 }
@@ -20,6 +22,7 @@ export function SetRow({
   e1rm,
   locked,
   waitingOn,
+  resting = false,
   onMark,
   onLogAmrap,
 }: SetRowProps) {
@@ -28,7 +31,11 @@ export function SetRow({
   const reps = draft ?? set.reps ?? set.target
   const number = index + 1
   const logged = set.success !== null
-  const lockHint = waitingOn === null ? 'Not yet' : `Log set ${waitingOn} first`
+  const lockHint = resting
+    ? 'Rest first'
+    : waitingOn === null
+      ? 'Not yet'
+      : `Log set ${waitingOn} first`
 
   const bump = (delta: number) => setDraft(Math.max(0, Math.min(99, reps + delta)))
 

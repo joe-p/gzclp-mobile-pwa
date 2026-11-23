@@ -12,6 +12,8 @@ import { WarmupList } from './WarmupList'
 interface ExerciseCardProps {
   exercise: ExerciseRecord
   expanded: boolean
+  /** Index of the set rest is currently holding back in this lift, if any. */
+  lockedSetIndex: number | null
   onToggle: () => void
   onMarkSet: (setIndex: number, success: boolean | null) => void
   onLogAmrap: (reps: number) => void
@@ -21,6 +23,7 @@ interface ExerciseCardProps {
 export function ExerciseCard({
   exercise,
   expanded,
+  lockedSetIndex,
   onToggle,
   onMarkSet,
   onLogAmrap,
@@ -92,8 +95,9 @@ export function ExerciseCard({
                 index={index}
                 set={set}
                 e1rm={exercise.e1rm}
-                locked={isSetLocked(exercise.sets, index)}
+                locked={isSetLocked(exercise.sets, index) || index === lockedSetIndex}
                 waitingOn={firstOpen === -1 ? null : firstOpen + 1}
+                resting={index === lockedSetIndex}
                 onMark={(success) => onMarkSet(index, success)}
                 onLogAmrap={onLogAmrap}
               />

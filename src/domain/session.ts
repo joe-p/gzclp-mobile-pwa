@@ -85,6 +85,23 @@ export function sessionProgress(session: SessionRecord): { logged: number; total
   return { logged, total }
 }
 
+export interface OpenSet {
+  exerciseIndex: number
+  setIndex: number
+}
+
+/**
+ * The next set in session order that still needs a result, i.e. the one that comes
+ * up once the current rest is over. `null` when every set is logged.
+ */
+export function nextOpenSet(session: SessionRecord): OpenSet | null {
+  for (let exerciseIndex = 0; exerciseIndex < session.exercises.length; exerciseIndex += 1) {
+    const setIndex = session.exercises[exerciseIndex].sets.findIndex((set) => set.success === null)
+    if (setIndex !== -1) return { exerciseIndex, setIndex }
+  }
+  return null
+}
+
 /**
  * Sets are logged front to back: a set cannot take a result until every set before
  * it has one. Sets that already hold a result are never locked, so an earlier

@@ -1,18 +1,23 @@
 import { programDays } from '../domain/program'
-import { finishesWarmupRamp } from '../domain/session'
+import { finishesWarmupRamp, nextOpenSet } from '../domain/session'
 import type { Tier } from '../domain/types'
 import { useApp } from '../store/context'
 import { ExerciseCard } from './ExerciseCard'
 
 interface SessionScreenProps {
   onSetLogged: (tier: Tier) => void
+  /** True while rest is running, which holds back the next set. */
+  resting: boolean
 }
 
-export function SessionScreen({ onSetLogged }: SessionScreenProps) {
+export function SessionScreen({ onSetLogged, resting }: SessionScreenProps) {
   const { data, dispatch } = useApp()
   const session = data.activeSession
   if (!session) return null
 
+  // Rest only ever gates the one set that comes up next, so logging can resume
+  // the moment the minimum rest time has passed.
+  const next = resting ? nextOpenSet(session) : null
   const days = programDays(data.t3ByDay)
   const day = days.find((item) => item.id === session.dayId) ?? days[0]
 
@@ -39,6 +44,7 @@ export function SessionScreen({ onSetLogged }: SessionScreenProps) {
           key={`${exercise.liftId}:${exercise.tier}`}
           exercise={exercise}
           expanded={session.exerciseIndex === index}
+          lockedSetIndex={next?.exerciseIndex === index ? next.setIndex : null}
           onToggle={() =>
             dispatch({ type: 'showExercise', index: session.exerciseIndex === index ? -1 : index })
           }
