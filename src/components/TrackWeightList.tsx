@@ -21,7 +21,46 @@ interface WeightRowProps {
   note?: string
   removeLabel?: string
   onRemove?: () => void
+  moveLabels?: { up: string; down: string }
+  onMove?: (direction: -1 | 1) => void
+  canMoveUp?: boolean
+  canMoveDown?: boolean
   onChange: (weight: number) => void
+}
+
+function MoveButtons({
+  labels,
+  canMoveUp,
+  canMoveDown,
+  onMove,
+}: {
+  labels: { up: string; down: string }
+  canMoveUp: boolean
+  canMoveDown: boolean
+  onMove: (direction: -1 | 1) => void
+}) {
+  return (
+    <div className="row-moves">
+      <button
+        type="button"
+        className="row-move"
+        onClick={() => onMove(-1)}
+        aria-label={labels.up}
+        disabled={!canMoveUp}
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        className="row-move"
+        onClick={() => onMove(1)}
+        aria-label={labels.down}
+        disabled={!canMoveDown}
+      >
+        ↓
+      </button>
+    </div>
+  )
 }
 
 function WeightRow({
@@ -34,12 +73,20 @@ function WeightRow({
   note,
   removeLabel,
   onRemove,
+  moveLabels,
+  onMove,
+  canMoveUp = false,
+  canMoveDown = false,
   onChange,
 }: WeightRowProps) {
   const spec = stageSpec(tier, stage)
   const e1rm = showE1rm ? e1rmForStage(weight, tier, stage) : null
   return (
-    <li className={`weight-row ${onRemove ? 'has-remove' : ''}`}>
+    <li
+      className={`weight-row ${onRemove ? 'has-remove' : ''} ${
+        onMove && moveLabels ? 'has-moves' : ''
+      }`}
+    >
       <div className="weight-meta">
         <span className={`tier-dot tier-${tier.toLowerCase()}`}>{tier}</span>
         <div>
@@ -57,6 +104,14 @@ function WeightRow({
         </div>
       </div>
       <WeightInput value={weight} label={`${lift.name} ${tier}`} onChange={onChange} />
+      {onMove && moveLabels && (
+        <MoveButtons
+          labels={moveLabels}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+          onMove={onMove}
+        />
+      )}
       {onRemove && (
         <button
           type="button"
@@ -117,6 +172,7 @@ interface DayWeightListProps {
   stageFor?: (key: TrackKey) => number
   showE1rm?: boolean
   onRemoveT3: (liftId: LiftId) => void
+  onMoveT3?: (liftId: LiftId, direction: -1 | 1) => void
 }
 
 export function DayWeightList({
@@ -128,12 +184,15 @@ export function DayWeightList({
   stageFor,
   showE1rm = false,
   onRemoveT3,
+  onMoveT3,
 }: DayWeightListProps) {
+  const t3Ids = day.slots.filter((slot) => slot.tier === 'T3').map((slot) => slot.liftId)
   return (
     <ul className="weight-list">
       {day.slots.map(({ liftId, tier }) => {
         const key = trackKey(liftId, tier)
         const lift = resolveLift(lifts, liftId)
+        const t3Index = tier === 'T3' ? t3Ids.indexOf(liftId) : -1
         const otherDays = days
           .filter(
             (other) =>
@@ -153,6 +212,19 @@ export function DayWeightList({
             note={otherDays.length ? `shared with ${otherDays.join(', ')}` : undefined}
             onRemove={tier === 'T3' ? () => onRemoveT3(liftId) : undefined}
             removeLabel={`Remove ${lift.name} from ${day.label}`}
+            onMove={
+              onMoveT3 && t3Index !== -1 ? (direction) => onMoveT3(liftId, direction) : undefined
+            }
+            moveLabels={
+              onMoveT3
+                ? {
+                    up: `Move ${lift.name} earlier in ${day.label}`,
+                    down: `Move ${lift.name} later in ${day.label}`,
+                  }
+                : undefined
+            }
+            canMoveUp={t3Index > 0}
+            canMoveDown={t3Index !== -1 && t3Index < t3Ids.length - 1}
             onChange={(weight) => onChange(key, weight)}
           />
         )

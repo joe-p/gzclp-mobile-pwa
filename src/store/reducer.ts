@@ -47,6 +47,7 @@ export type Action =
   | { type: 'updateTrackWeight'; key: TrackKey; weight: number }
   | { type: 'addT3'; dayId: DayId; name: string; barbell: boolean }
   | { type: 'removeT3'; dayId: DayId; liftId: LiftId }
+  | { type: 'moveT3'; dayId: DayId; liftId: LiftId; direction: -1 | 1 }
   | { type: 'importData'; data: AppData }
   | { type: 'resetData' }
 
@@ -260,6 +261,19 @@ export function reducer(state: AppData, action: Action): AppData {
           [action.dayId]: dayT3.filter((liftId) => liftId !== action.liftId),
         },
       }
+    }
+
+    case 'moveT3': {
+      const dayT3 = state.t3ByDay[action.dayId]
+      if (!dayT3) return state
+      const index = dayT3.indexOf(action.liftId)
+      const target = index + Math.sign(action.direction)
+      // Missing lift or already at the end of the list in that direction.
+      if (index === -1 || target < 0 || target >= dayT3.length) return state
+      const reordered = [...dayT3]
+      reordered[index] = dayT3[target]
+      reordered[target] = dayT3[index]
+      return { ...state, t3ByDay: { ...state.t3ByDay, [action.dayId]: reordered } }
     }
 
     case 'importData':

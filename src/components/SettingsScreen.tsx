@@ -101,6 +101,9 @@ export function SettingsScreen() {
             onChange={(key, weight) => dispatch({ type: 'updateTrackWeight', key, weight })}
             showE1rm
             onRemoveT3={(liftId) => dispatch({ type: 'removeT3', dayId: day.id, liftId })}
+            onMoveT3={(liftId, direction) =>
+              dispatch({ type: 'moveT3', dayId: day.id, liftId, direction })
+            }
           />
           <AddAccessoryForm dayId={day.id} />
         </section>

@@ -300,6 +300,44 @@ describe('reducer T3 accessories', () => {
     expect(added.lifts[id].name).toBe('barbell curl')
   })
 
+  it('reorders accessories within a day and keeps the new order in a session', () => {
+    let state = onboarded()
+    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'Leg Press', barbell: false })
+    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'Curl', barbell: false })
+    const legPress = liftIdFor(state, 'Leg Press')
+    const curl = liftIdFor(state, 'Curl')
+
+    expect(state.t3ByDay.A1).toEqual(['latpulldown', legPress, curl])
+
+    state = reducer(state, { type: 'moveT3', dayId: 'A1', liftId: curl, direction: -1 })
+    expect(state.t3ByDay.A1).toEqual(['latpulldown', curl, legPress])
+
+    // Reordering one day leaves the others alone.
+    expect(state.t3ByDay.B1).toEqual(['row'])
+
+    state = reducer(state, { type: 'startSession' })
+    expect(state.activeSession?.exercises.map((exercise) => exercise.liftId)).toEqual([
+      'squat',
+      'bench',
+      'latpulldown',
+      curl,
+      legPress,
+    ])
+  })
+
+  it('ignores moves past either end of the list', () => {
+    const state = onboarded()
+    const last = state.t3ByDay.A1[state.t3ByDay.A1.length - 1]
+
+    expect(reducer(state, { type: 'moveT3', dayId: 'A1', liftId: last, direction: 1 })).toBe(state)
+    expect(
+      reducer(state, { type: 'moveT3', dayId: 'A1', liftId: state.t3ByDay.A1[0], direction: -1 }),
+    ).toBe(state)
+    expect(reducer(state, { type: 'moveT3', dayId: 'A1', liftId: 'nope', direction: 1 })).toBe(
+      state,
+    )
+  })
+
   it('ignores blank and duplicate additions', () => {
     const before = onboarded()
     expect(reducer(before, { type: 'addT3', dayId: 'A1', name: '   ', barbell: false })).toBe(before)

@@ -1378,6 +1378,41 @@ button {
   gap: 8px;
 }
 
+.weight-row.has-moves {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.row-moves {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row-move {
+  width: 28px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.row-move:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.row-move:not(:disabled):hover,
+.row-move:not(:disabled):focus-visible {
+  color: var(--text);
+  background: var(--surface-3);
+}
+
 .row-remove {
   width: 32px;
   height: 40px;
@@ -1766,6 +1801,10 @@ button {
 
   .weight-row.has-remove .weight-meta {
     grid-column: 1 / -1;
+  }
+
+  .weight-row.has-moves {
+    grid-template-columns: minmax(0, 1fr) auto auto;
   }
 
   .weight-input {
