@@ -8,7 +8,7 @@ import type {
   Tier,
   TrackKey,
 } from '../domain/types'
-import { formatWeight } from '../domain/units'
+import { formatWeight, minWeightForTier } from '../domain/units'
 import { WeightInput } from './WeightInput'
 
 interface WeightRowProps {
@@ -103,7 +103,12 @@ function WeightRow({
           )}
         </div>
       </div>
-      <WeightInput value={weight} label={`${lift.name} ${tier}`} onChange={onChange} />
+      <WeightInput
+        value={weight}
+        label={`${lift.name} ${tier}`}
+        min={minWeightForTier(tier)}
+        onChange={onChange}
+      />
       {onMove && moveLabels && (
         <MoveButtons
           labels={moveLabels}

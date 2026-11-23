@@ -1,6 +1,15 @@
+import type { Tier } from './types'
+
 export const WEIGHT_STEP = 5
 
 export const MIN_WEIGHT = 5
+
+/** T3 accessories can be bodyweight/unweighted, so they may be loaded at 0 lb. */
+export const MIN_T3_WEIGHT = 0
+
+export function minWeightForTier(tier: Tier): number {
+  return tier === 'T3' ? MIN_T3_WEIGHT : MIN_WEIGHT
+}
 
 /** Everything is stored in pounds; the smallest plate jump we support is 5 lb. */
 export function roundToIncrement(value: number, increment: number = WEIGHT_STEP): number {

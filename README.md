@@ -76,7 +76,8 @@ public/         icons, manifest assets
 
 ## Notes
 
-- All weights are pounds, rounded to 5 lb plate jumps.
+- All weights are pounds, rounded to 5 lb plate jumps. T3 accessories can go down to 0 lb for
+  bodyweight/unweighted work; T1 and T2 have a 5 lb floor.
 - Custom T3 exercises start at 45 lb and can be marked as barbell-loaded so plate math is shown;
   the "Barbell" prefix is added automatically.
 - Progression is applied only when a session is finished, never mid-set.

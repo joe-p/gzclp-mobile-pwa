@@ -6,15 +6,24 @@ interface WeightInputProps {
   onChange: (value: number) => void
   label: string
   step?: number
+  /** Lowest allowed weight. T3 accessories pass 0 so they can be unweighted. */
+  min?: number
   id?: string
 }
 
-export function WeightInput({ value, onChange, label, step = WEIGHT_STEP, id }: WeightInputProps) {
+export function WeightInput({
+  value,
+  onChange,
+  label,
+  step = WEIGHT_STEP,
+  min = MIN_WEIGHT,
+  id,
+}: WeightInputProps) {
   // `draft` is only set while the field is being edited, so external weight
   // changes (stepper, reset, import) always show up without a sync effect.
   const [draft, setDraft] = useState<string | null>(null)
 
-  const clamp = (next: number) => Math.max(MIN_WEIGHT, roundToIncrement(next, step))
+  const clamp = (next: number) => Math.max(min, roundToIncrement(next, step))
 
   const commit = () => {
     const parsed = Number(draft)

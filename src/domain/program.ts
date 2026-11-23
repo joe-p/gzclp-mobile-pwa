@@ -9,7 +9,7 @@ import type {
   TrackKey,
   TrackState,
 } from './types'
-import { roundToIncrement, sanitizeWeight } from './units'
+import { minWeightForTier, roundToIncrement, sanitizeWeight } from './units'
 
 export const LIFTS: Record<BuiltInLiftId, LiftDefinition> = {
   squat: { id: 'squat', name: 'Squat', short: 'SQ', body: 'lower', barbell: true },
@@ -74,6 +74,11 @@ export const PROGRAM_DAYS: readonly ProgramDay[] = programDays()
 
 export function trackKey(liftId: LiftId, tier: Tier): TrackKey {
   return `${liftId}:${tier}`
+}
+
+/** Tier encoded in a track key, e.g. `bench:T1` -> T1. */
+export function tierForTrackKey(key: TrackKey): Tier {
+  return key.slice(key.lastIndexOf(':') + 1) as Tier
 }
 
 /** Cleans a user-typed exercise name before it is stored or matched. */
@@ -215,7 +220,10 @@ export function defaultTracks(
     for (const slot of day.slots) {
       const key = trackKey(slot.liftId, slot.tier)
       if (tracks[key]) continue
-      tracks[key] = { weight: sanitizeWeight(defaultWeightFor(slot.liftId, slot.tier)), stage: 0 }
+      tracks[key] = {
+        weight: sanitizeWeight(defaultWeightFor(slot.liftId, slot.tier), minWeightForTier(slot.tier)),
+        stage: 0,
+      }
     }
   }
   return tracks

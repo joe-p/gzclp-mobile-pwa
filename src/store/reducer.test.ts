@@ -338,6 +338,40 @@ describe('reducer T3 accessories', () => {
     )
   })
 
+  it('lets T3 weights drop to 0 lb but keeps the floor on T1/T2', () => {
+    let state = onboarded()
+    state = reducer(state, { type: 'updateTrackWeight', key: 'latpulldown:T3', weight: 0 })
+    expect(state.tracks['latpulldown:T3'].weight).toBe(0)
+
+    state = reducer(state, { type: 'updateTrackWeight', key: 'squat:T1', weight: 0 })
+    expect(state.tracks['squat:T1'].weight).toBe(5)
+    state = reducer(state, { type: 'updateTrackWeight', key: 'bench:T2', weight: -10 })
+    expect(state.tracks['bench:T2'].weight).toBe(5)
+  })
+
+  it('keeps a 0 lb T3 through setup and a finished session', () => {
+    let state = onboarded()
+    const weights = Object.fromEntries(
+      Object.entries(state.tracks).map(([key, track]) => [key, track.weight]),
+    ) as Record<TrackKey, number>
+    weights['latpulldown:T3'] = 0
+
+    state = reducer(state, {
+      type: 'saveSetup',
+      weights,
+      restByTier: { T1: 180, T2: 120, T3: 60 },
+      plates: state.settings.plates,
+    })
+    expect(state.tracks['latpulldown:T3'].weight).toBe(0)
+
+    state = reducer(state, { type: 'startSession' })
+    for (const index of [0, 1, 2]) state = logExercise(state, index, true)
+    state = reducer(state, { type: 'finishSession' })
+
+    expect(state.tracks['latpulldown:T3'].weight).toBe(0)
+    expect(state.sessions[0].exercises[2].weight).toBe(0)
+  })
+
   it('ignores blank and duplicate additions', () => {
     const before = onboarded()
     expect(reducer(before, { type: 'addT3', dayId: 'A1', name: '   ', barbell: false })).toBe(before)

@@ -8,6 +8,7 @@ import {
   programDays,
   shortForName,
   TIERS,
+  tierForTrackKey,
   trackKey,
 } from '../domain/program'
 import { applyProgression, exerciseSucceeded } from '../domain/progression'
@@ -25,7 +26,7 @@ import type {
   Settings,
   TrackKey,
 } from '../domain/types'
-import { sanitizeWeight } from '../domain/units'
+import { minWeightForTier, sanitizeWeight } from '../domain/units'
 import { clampRestSeconds, createInitialData } from './defaults'
 
 export type Action =
@@ -97,7 +98,10 @@ export function reducer(state: AppData, action: Action): AppData {
       for (const key of Object.keys(tracks) as TrackKey[]) {
         const weight = action.weights[key]
         if (typeof weight === 'number' && Number.isFinite(weight)) {
-          tracks[key] = { ...tracks[key], weight: sanitizeWeight(weight) }
+          tracks[key] = {
+            ...tracks[key],
+            weight: sanitizeWeight(weight, minWeightForTier(tierForTrackKey(key))),
+          }
         }
       }
       return {
@@ -211,7 +215,13 @@ export function reducer(state: AppData, action: Action): AppData {
       if (!track) return state
       return {
         ...state,
-        tracks: { ...state.tracks, [action.key]: { ...track, weight: sanitizeWeight(action.weight) } },
+        tracks: {
+          ...state.tracks,
+          [action.key]: {
+            ...track,
+            weight: sanitizeWeight(action.weight, minWeightForTier(tierForTrackKey(action.key))),
+          },
+        },
       }
     }
 
@@ -244,7 +254,10 @@ export function reducer(state: AppData, action: Action): AppData {
           ? state.tracks
           : {
               ...state.tracks,
-              [key]: { weight: sanitizeWeight(defaultWeightFor(lift.id, 'T3')), stage: 0 },
+              [key]: {
+                weight: sanitizeWeight(defaultWeightFor(lift.id, 'T3'), minWeightForTier('T3')),
+                stage: 0,
+              },
             },
       }
     }

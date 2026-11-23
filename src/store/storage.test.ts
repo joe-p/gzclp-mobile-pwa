@@ -103,6 +103,21 @@ describe('migrate accessories', () => {
     expect(data?.lifts.latpulldown).toMatchObject({ name: 'Lat Pulldown', barbell: false })
   })
 
+  it('preserves a 0 lb T3 weight and keeps the floor on T1/T2', () => {
+    const initial = createInitialData()
+    const data = migrate({
+      ...initial,
+      tracks: {
+        ...initial.tracks,
+        'latpulldown:T3': { weight: 0, stage: 0 },
+        'squat:T1': { weight: 0, stage: 0 },
+      },
+    })
+
+    expect(data?.tracks['latpulldown:T3']).toEqual({ weight: 0, stage: 0 })
+    expect(data?.tracks['squat:T1']).toEqual({ weight: 5, stage: 0 })
+  })
+
   it('round-trips custom accessories and their config', () => {
     const initial = createInitialData()
     const lift = {

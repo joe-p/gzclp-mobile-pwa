@@ -26,7 +26,7 @@ import type {
   TrackKey,
   TrackState,
 } from '../domain/types'
-import { sanitizeWeight } from '../domain/units'
+import { minWeightForTier, sanitizeWeight } from '../domain/units'
 import { clampRestSeconds, createInitialData, DATA_VERSION, DEFAULT_REST_BY_TIER } from './defaults'
 
 export const STORAGE_KEY = 'gzclp.data.v1'
@@ -159,7 +159,7 @@ function readExercise(value: unknown): ExerciseRecord | null {
   return {
     liftId,
     tier,
-    weight: sanitizeWeight(readNumber(value.weight, 45)),
+    weight: sanitizeWeight(readNumber(value.weight, 45), minWeightForTier(tier)),
     stage: Math.max(0, Math.trunc(readNumber(value.stage, 0))),
     sets: sets as SetRecord[],
     e1rm: typeof value.e1rm === 'number' && Number.isFinite(value.e1rm) ? value.e1rm : null,
@@ -254,7 +254,7 @@ export function migrate(raw: unknown): AppData | null {
     // them back later restores the working weight.
     if (!hasLift(lifts, parsed.liftId)) lifts[parsed.liftId] = fallbackLift(parsed.liftId)
     tracks[trackKey(parsed.liftId, parsed.tier)] = {
-      weight: sanitizeWeight(stored.weight),
+      weight: sanitizeWeight(stored.weight, minWeightForTier(parsed.tier)),
       stage: Math.max(0, Math.trunc(readNumber(stored.stage, 0))),
     }
   }
