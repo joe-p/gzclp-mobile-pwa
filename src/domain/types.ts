@@ -46,6 +46,13 @@ export interface SetRecord {
   amrap: boolean
 }
 
+/** A single warmup set. Check-offs are optional and never affect progression. */
+export interface WarmupRecord {
+  weight: number
+  reps: number
+  completed: boolean
+}
+
 export type ProgressionAction = 'increase' | 'demote' | 'reset' | 'none'
 
 export interface ProgressionOutcome {
@@ -66,6 +73,8 @@ export interface ExerciseRecord {
   tier: Tier
   weight: number
   stage: number
+  /** Warmup ramp snapshotted when the session started. */
+  warmups: WarmupRecord[]
   sets: SetRecord[]
   /** Estimated 1RM from the AMRAP set (T1/T2 only). */
   e1rm: number | null
@@ -94,6 +103,9 @@ export interface RestRange {
 
 export type RestByTier = Record<Tier, RestRange>
 
+/** How the warmup ramp for T1/T2 is calculated. */
+export type WarmupMethod = 'even' | 'percent'
+
 /** A plate size and how many *pairs* of it the user owns. */
 export interface PlateStack {
   size: number
@@ -111,6 +123,7 @@ export interface Settings {
   plates: PlateInventory
   setupComplete: boolean
   haptics: boolean
+  warmupMethod: WarmupMethod
 }
 
 export type T3ByDay = Record<DayId, LiftId[]>

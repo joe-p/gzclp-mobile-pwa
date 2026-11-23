@@ -21,6 +21,10 @@ linear progression program. Built to be used one-handed between sets.
 - **Plate loading.** Enter the bar weight and how many pairs of each plate you own during onboarding
   or in Settings. Every exercise shows the plates to put on each side for its working weight, and
   warns when your rack can't make the exact jump.
+- **Warmup ramps for T1 and T2.** The expanded lift shows the empty-bar sets plus three ramp sets with
+  per-side plate math. Tap ✓ to track each warmup set; check-offs survive a reload and appear in
+  History. Pick the method in Settings: even jumps (work weight minus the bar, split in four) or
+  45% / 65% / 85% of the work weight. Warmups never affect progression, and T3 accessories have none.
 - **Rest range timer** starts when you log a set. Each tier has a configurable min/max (defaults: T1 3–5 min, T2 2–3 min, T3 60–90 s). You can't skip before the minimum; passing the maximum triggers a warning, and +30 s and optional vibration are available.
 - **History** of every session: sets, AMRAP reps, e1RM, and the weight earned for next time.
 - **Resumable sessions** — reloading the app mid-workout picks up where you left off.

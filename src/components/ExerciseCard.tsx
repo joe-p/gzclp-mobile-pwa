@@ -6,6 +6,7 @@ import { useApp } from '../store/context'
 import { ChevronIcon } from './icons'
 import { PlateBreakdown } from './PlateBreakdown'
 import { SetRow } from './SetRow'
+import { WarmupList } from './WarmupList'
 
 interface ExerciseCardProps {
   exercise: ExerciseRecord
@@ -13,9 +14,17 @@ interface ExerciseCardProps {
   onToggle: () => void
   onMarkSet: (setIndex: number, success: boolean | null) => void
   onLogAmrap: (reps: number) => void
+  onToggleWarmup: (warmupIndex: number, completed: boolean) => void
 }
 
-export function ExerciseCard({ exercise, expanded, onToggle, onMarkSet, onLogAmrap }: ExerciseCardProps) {
+export function ExerciseCard({
+  exercise,
+  expanded,
+  onToggle,
+  onMarkSet,
+  onLogAmrap,
+  onToggleWarmup,
+}: ExerciseCardProps) {
   const { data } = useApp()
   const lift = resolveLift(data.lifts, exercise.liftId)
   const spec = stageSpec(exercise.tier, exercise.stage)
@@ -66,6 +75,11 @@ export function ExerciseCard({ exercise, expanded, onToggle, onMarkSet, onLogAmr
 
       {expanded && (
         <div className="exercise-body">
+          <WarmupList
+            liftId={exercise.liftId}
+            warmups={exercise.warmups}
+            onToggle={onToggleWarmup}
+          />
           <PlateBreakdown liftId={exercise.liftId} weight={exercise.weight} />
 
           <ul className="set-list">

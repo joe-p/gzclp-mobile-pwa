@@ -11,6 +11,7 @@ import {
 } from '../domain/program'
 import type { LiftId, ProgramDay, Tier } from '../domain/types'
 import { formatWeight, minWeightForTier } from '../domain/units'
+import { WARMUP_METHOD_HINTS, WARMUP_METHOD_LABELS, WARMUP_METHODS } from '../domain/warmup'
 import { useApp } from '../store/context'
 import { downloadBackup, readImportFile } from '../store/storage'
 import { MoveButtons, WeightRow } from './TrackWeightList'
@@ -342,6 +343,29 @@ export function SettingsScreen() {
           value={data.settings.plates}
           onChange={(plates) => dispatch({ type: 'updateSettings', patch: { plates } })}
         />
+      </section>
+
+      <section className="card">
+        <h2 className="card-title">Warmups</h2>
+        <p className="muted small">
+          T1 and T2 show a checkable warmup ramp above the work sets. Weights are rounded to the
+          nearest 5 lb and use the bar weight from Bar & plates. Changes apply to new workouts. T3
+          accessories have no warmup.
+        </p>
+        <div className="chip-row warmup-method-row" role="group" aria-label="Warmup method">
+          {WARMUP_METHODS.map((method) => (
+            <button
+              key={method}
+              type="button"
+              className={`chip ${data.settings.warmupMethod === method ? 'is-selected' : ''}`}
+              aria-pressed={data.settings.warmupMethod === method}
+              onClick={() => dispatch({ type: 'updateSettings', patch: { warmupMethod: method } })}
+            >
+              {WARMUP_METHOD_LABELS[method]}
+            </button>
+          ))}
+        </div>
+        <p className="warmup-method-hint">{WARMUP_METHOD_HINTS[data.settings.warmupMethod]}</p>
       </section>
 
       <section className="card">

@@ -11,7 +11,7 @@ function makeRecord(tier: Tier, weight: number, results: (boolean | null)[]): Ex
     success,
     amrap: index === results.length - 1,
   }))
-  return { liftId: 'squat', tier, weight, stage: 0, sets, e1rm: null, outcome: null }
+  return { liftId: 'squat', tier, weight, stage: 0, warmups: [], sets, e1rm: null, outcome: null }
 }
 
 describe('exerciseSucceeded', () => {

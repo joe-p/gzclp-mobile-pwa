@@ -44,6 +44,30 @@ describe('reducer session lifecycle', () => {
     expect(state.activeSession?.exercises).toHaveLength(3)
   })
 
+  it('tracks warmup sets without affecting work-set progress', () => {
+    let state = setup()
+    expect(state.activeSession?.exercises[0].warmups.length).toBeGreaterThan(0)
+
+    state = reducer(state, {
+      type: 'recordWarmup',
+      exerciseIndex: 0,
+      warmupIndex: 0,
+      completed: true,
+    })
+
+    expect(state.activeSession?.exercises[0].warmups[0].completed).toBe(true)
+    expect(state.activeSession?.exercises[0].sets.every((set) => set.success === null)).toBe(true)
+    expect(state.activeSession?.exerciseIndex).toBe(0)
+
+    state = reducer(state, {
+      type: 'recordWarmup',
+      exerciseIndex: 0,
+      warmupIndex: 0,
+      completed: false,
+    })
+    expect(state.activeSession?.exercises[0].warmups[0].completed).toBe(false)
+  })
+
   it('adds weight on a clean session and advances the rotation', () => {
     let state = setup()
     for (const index of [0, 1, 2]) state = logExercise(state, index, true)

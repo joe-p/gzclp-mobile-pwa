@@ -2,7 +2,7 @@ import { defaultPlateInventory, normalizePlateInventory } from '../domain/plates
 import { cloneT3ByDay, cloneT3Library, defaultTracks, LIFTS } from '../domain/program'
 import type { AppData, RestByTier, Settings } from '../domain/types'
 
-export const DATA_VERSION = 6
+export const DATA_VERSION = 7
 
 export const DEFAULT_REST_BY_TIER: RestByTier = {
   T1: { min: 180, max: 300 },
@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
   plates: defaultPlateInventory(),
   setupComplete: false,
   haptics: true,
+  warmupMethod: 'even',
 }
 
 export function createInitialData(): AppData {

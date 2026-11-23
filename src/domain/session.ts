@@ -1,5 +1,6 @@
 import { stageSpec, trackKey } from './program'
 import { epley1rm } from './onerm'
+import { warmupRecords } from './warmup'
 import type {
   ActiveSession,
   ExerciseRecord,
@@ -8,6 +9,7 @@ import type {
   SetRecord,
   TrackKey,
   TrackState,
+  WarmupMethod,
 } from './types'
 
 export function newId(): string {
@@ -17,11 +19,22 @@ export function newId(): string {
   return `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
 }
 
+export interface SessionOptions {
+  now?: Date
+  /** Bar weight and warmup method are snapshotted into the session. */
+  bar?: number
+  warmupMethod?: WarmupMethod
+}
+
 export function createSession(
   day: ProgramDay,
   tracks: Record<TrackKey, TrackState>,
-  now: Date = new Date(),
+  options: SessionOptions = {},
 ): ActiveSession {
+  const now = options.now ?? new Date()
+  const bar = options.bar ?? 45
+  const warmupMethod = options.warmupMethod ?? 'even'
+
   const exercises: ExerciseRecord[] = day.slots.map((slot) => {
     const track = tracks[trackKey(slot.liftId, slot.tier)]
     const spec = stageSpec(slot.tier, track.stage)
@@ -36,6 +49,7 @@ export function createSession(
       tier: slot.tier,
       weight: track.weight,
       stage: track.stage,
+      warmups: warmupRecords(slot.liftId, slot.tier, track.weight, bar, warmupMethod),
       sets,
       e1rm: null,
       outcome: null,
@@ -84,6 +98,22 @@ export function recordSetResult(
     index === setIndex ? { ...set, success, reps: success === true ? set.target : null } : set,
   )
   return replaceExercise(session, exerciseIndex, { ...exercise, sets })
+}
+
+export function recordWarmupResult(
+  session: ActiveSession,
+  exerciseIndex: number,
+  warmupIndex: number,
+  completed: boolean,
+): ActiveSession {
+  const exercise = session.exercises[exerciseIndex]
+  const warmup = exercise?.warmups[warmupIndex]
+  if (!exercise || !warmup || warmup.completed === completed) return session
+
+  const warmups = exercise.warmups.map((item, index) =>
+    index === warmupIndex ? { ...item, completed } : item,
+  )
+  return replaceExercise(session, exerciseIndex, { ...exercise, warmups })
 }
 
 export function recordAmrapResult(

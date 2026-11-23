@@ -49,6 +49,9 @@ export function SessionScreen({ onSetLogged }: SessionScreenProps) {
             dispatch({ type: 'recordAmrap', exerciseIndex: index, reps })
             onSetLogged(exercise.tier)
           }}
+          onToggleWarmup={(warmupIndex, completed) =>
+            dispatch({ type: 'recordWarmup', exerciseIndex: index, warmupIndex, completed })
+          }
         />
       ))}
 

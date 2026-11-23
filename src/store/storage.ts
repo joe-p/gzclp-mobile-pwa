@@ -27,9 +27,12 @@ import type {
   Tier,
   TrackKey,
   TrackState,
+  WarmupMethod,
+  WarmupRecord,
 } from '../domain/types'
 import { clampRestSeconds, normalizeRestRange } from '../domain/rest'
 import { minWeightForTier, sanitizeWeight } from '../domain/units'
+import { warmupRecords } from '../domain/warmup'
 import { cloneRestByTier, createInitialData, DATA_VERSION, DEFAULT_REST_BY_TIER } from './defaults'
 
 export const STORAGE_KEY = 'gzclp.data.v1'
@@ -170,6 +173,19 @@ function readOutcome(value: unknown): ProgressionOutcome | null {
   }
 }
 
+function readWarmup(value: unknown): WarmupRecord | null {
+  if (!isObject(value)) return null
+  const weight = readNumber(value.weight, NaN)
+  const reps = readNumber(value.reps, NaN)
+  if (!Number.isFinite(weight) || weight < 0) return null
+  if (!Number.isFinite(reps) || reps <= 0) return null
+  return {
+    weight,
+    reps: Math.min(99, Math.max(1, Math.round(reps))),
+    completed: value.completed === true,
+  }
+}
+
 function readExercise(value: unknown): ExerciseRecord | null {
   if (!isObject(value)) return null
   const liftId = value.liftId
@@ -178,11 +194,18 @@ function readExercise(value: unknown): ExerciseRecord | null {
   if (!Array.isArray(value.sets) || value.sets.length === 0) return null
   const sets = value.sets.map(readSet)
   if (sets.some((set) => set === null)) return null
+  const warmups = Array.isArray(value.warmups)
+    ? value.warmups
+        .map(readWarmup)
+        .filter((warmup): warmup is WarmupRecord => warmup !== null)
+    : []
+
   return {
     liftId,
     tier,
     weight: sanitizeWeight(readNumber(value.weight, 45), minWeightForTier(tier)),
     stage: Math.max(0, Math.trunc(readNumber(value.stage, 0))),
+    warmups,
     sets: sets as SetRecord[],
     e1rm: typeof value.e1rm === 'number' && Number.isFinite(value.e1rm) ? value.e1rm : null,
     outcome: readOutcome(value.outcome),
@@ -243,6 +266,10 @@ function readPlateInventory(value: unknown): PlateInventory {
 function restRangeFromSeconds(seconds: number, tier: Tier): RestRange {
   const min = clampRestSeconds(seconds)
   return { min, max: Math.max(min, DEFAULT_REST_BY_TIER[tier].max) }
+}
+
+function readWarmupMethod(value: unknown): WarmupMethod {
+  return value === 'percent' ? 'percent' : 'even'
 }
 
 function readRestRange(value: unknown, tier: Tier): RestRange {
@@ -313,6 +340,7 @@ export function migrate(raw: unknown): AppData | null {
     plates: readPlateInventory(rawSettings.plates),
     setupComplete: rawSettings.setupComplete === true,
     haptics: rawSettings.haptics !== false,
+    warmupMethod: readWarmupMethod(rawSettings.warmupMethod),
   }
 
   const sessions = Array.isArray(raw.sessions)
@@ -334,6 +362,22 @@ export function migrate(raw: unknown): AppData | null {
       ? raw.lastSummaryId
       : null
 
+  // A resumable session from before warmups were tracked gets a ramp built from
+  // the current bar and method, so it can still be checked off in progress.
+  const activeSession = readActiveSession(raw.activeSession)
+  if (activeSession) {
+    for (const exercise of activeSession.exercises) {
+      if (exercise.warmups.length > 0) continue
+      exercise.warmups = warmupRecords(
+        exercise.liftId,
+        exercise.tier,
+        exercise.weight,
+        settings.plates.bar,
+        settings.warmupMethod,
+      )
+    }
+  }
+
   return {
     version: DATA_VERSION,
     settings,
@@ -346,7 +390,7 @@ export function migrate(raw: unknown): AppData | null {
       Math.max(0, Math.trunc(readNumber(raw.nextDayIndex, 0))),
     ),
     sessions,
-    activeSession: readActiveSession(raw.activeSession),
+    activeSession,
     lastSummaryId,
   }
 }

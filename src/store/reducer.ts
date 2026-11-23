@@ -13,7 +13,14 @@ import {
 } from '../domain/program'
 import { applyProgression, exerciseSucceeded } from '../domain/progression'
 import { normalizeRestRange } from '../domain/rest'
-import { createSession, isExerciseComplete, recordAmrapResult, recordSetResult, sessionProgress } from '../domain/session'
+import {
+  createSession,
+  isExerciseComplete,
+  recordAmrapResult,
+  recordSetResult,
+  recordWarmupResult,
+  sessionProgress,
+} from '../domain/session'
 import type {
   ActiveSession,
   AppData,
@@ -43,6 +50,7 @@ export type Action =
   | { type: 'showExercise'; index: number }
   | { type: 'recordSet'; exerciseIndex: number; setIndex: number; success: boolean | null }
   | { type: 'recordAmrap'; exerciseIndex: number; reps: number }
+  | { type: 'recordWarmup'; exerciseIndex: number; warmupIndex: number; completed: boolean }
   | { type: 'finishSession' }
   | { type: 'dismissSummary' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
@@ -125,7 +133,10 @@ export function reducer(state: AppData, action: Action): AppData {
       const day = days[state.nextDayIndex] ?? days[0]
       return {
         ...state,
-        activeSession: createSession(day, state.tracks),
+        activeSession: createSession(day, state.tracks, {
+          bar: state.settings.plates.bar,
+          warmupMethod: state.settings.warmupMethod,
+        }),
         lastSummaryId: null,
       }
     }
@@ -160,6 +171,18 @@ export function reducer(state: AppData, action: Action): AppData {
       return recordAndAdvance(state, action.exerciseIndex, (session) =>
         recordAmrapResult(session, action.exerciseIndex, action.reps),
       )
+
+    case 'recordWarmup': {
+      const session = state.activeSession
+      if (!session) return state
+      const next = recordWarmupResult(
+        session,
+        action.exerciseIndex,
+        action.warmupIndex,
+        action.completed,
+      )
+      return next === session ? state : { ...state, activeSession: next }
+    }
 
     case 'finishSession': {
       const session = state.activeSession

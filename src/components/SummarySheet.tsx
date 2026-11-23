@@ -49,6 +49,12 @@ export function SummarySheet({ session }: { session: SessionRecord }) {
                   </div>
                 )}
                 {exercise.e1rm !== null && <span className="tiny muted">e1RM {exercise.e1rm} lb</span>}
+                {exercise.warmups.length > 0 && (
+                  <span className="tiny muted">
+                    Warmups {exercise.warmups.filter((warmup) => warmup.completed).length}/
+                    {exercise.warmups.length}
+                  </span>
+                )}
               </li>
             )
           })}

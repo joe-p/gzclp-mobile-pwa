@@ -30,6 +30,21 @@ describe('migrate', () => {
       T3: { min: 60, max: 90 },
     })
     expect(data?.settings.haptics).toBe(true)
+    expect(data?.settings.warmupMethod).toBe('even')
+  })
+
+  it('reads the warmup method and falls back to even jumps', () => {
+    const percent = migrate({
+      settings: { setupComplete: true, warmupMethod: 'percent' },
+      tracks: {},
+    })
+    expect(percent?.settings.warmupMethod).toBe('percent')
+
+    const invalid = migrate({
+      settings: { setupComplete: true, warmupMethod: 'nonsense' },
+      tracks: {},
+    })
+    expect(invalid?.settings.warmupMethod).toBe('even')
   })
 
   it('upgrades a legacy single rest time to a range on every tier', () => {
@@ -253,7 +268,79 @@ describe('migrate accessories', () => {
     })
 
     expect(data?.sessions).toHaveLength(1)
+    expect(data?.sessions[0].exercises[0].warmups).toEqual([])
     expect(data?.lifts.custom_ghost).toMatchObject({ name: 'custom_ghost', barbell: false })
+  })
+
+  it('reads warmup check-offs and drops malformed warmups', () => {
+    const initial = createInitialData()
+    const data = migrate({
+      ...initial,
+      sessions: [
+        {
+          id: 's1',
+          dayId: 'A1',
+          startedAt: '2026-01-02T10:00:00.000Z',
+          finishedAt: null,
+          exercises: [
+            {
+              liftId: 'squat',
+              tier: 'T1',
+              weight: 135,
+              stage: 0,
+              warmups: [
+                { weight: 45, reps: 5, completed: true },
+                { weight: 70, reps: 5, completed: false },
+                { weight: 'bad', reps: 5, completed: true },
+                { weight: 90, reps: 0, completed: true },
+              ],
+              sets: [{ target: 3, reps: 3, success: true, amrap: true }],
+              e1rm: null,
+              outcome: null,
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(data?.sessions[0].exercises[0].warmups).toEqual([
+      { weight: 45, reps: 5, completed: true },
+      { weight: 70, reps: 5, completed: false },
+    ])
+  })
+
+  it('backfills warmups for an in-progress session saved before tracking', () => {
+    const initial = createInitialData()
+    const data = migrate({
+      ...initial,
+      settings: { ...initial.settings, warmupMethod: 'percent' },
+      activeSession: {
+        id: 'active',
+        dayId: 'A1',
+        startedAt: '2026-01-02T10:00:00.000Z',
+        finishedAt: null,
+        exerciseIndex: 0,
+        exercises: [
+          {
+            liftId: 'squat',
+            tier: 'T1',
+            weight: 315,
+            stage: 0,
+            sets: [{ target: 3, reps: null, success: null, amrap: true }],
+            e1rm: null,
+            outcome: null,
+          },
+        ],
+      },
+    })
+
+    expect(data?.activeSession?.exercises[0].warmups).toEqual([
+      { weight: 45, reps: 5, completed: false },
+      { weight: 45, reps: 5, completed: false },
+      { weight: 140, reps: 5, completed: false },
+      { weight: 205, reps: 3, completed: false },
+      { weight: 270, reps: 2, completed: false },
+    ])
   })
 
   it('keeps a removed accessory track so its weight survives', () => {

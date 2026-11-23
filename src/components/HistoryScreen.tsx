@@ -81,6 +81,7 @@ function HistoryItem({
             const lift = resolveLift(data.lifts, exercise.liftId)
             const spec = stageSpec(exercise.tier, exercise.stage)
             const description = exercise.outcome ? describeOutcome(exercise.outcome) : null
+            const warmupsDone = exercise.warmups.filter((warmup) => warmup.completed).length
             return (
               <div key={`${exercise.liftId}:${exercise.tier}`} className="history-ex">
                 <div className="history-ex-head">
@@ -123,6 +124,27 @@ function HistoryItem({
                     </span>
                   ))}
                 </div>
+                {exercise.warmups.length > 0 && (
+                  <div className="history-warmups">
+                    <span className="muted tiny">Warmups</span>
+                    <div className="set-chips">
+                      {exercise.warmups.map((warmup, index) => (
+                        <span
+                          key={index}
+                          className={`set-chip warmup-chip ${warmup.completed ? 'ok' : ''}`}
+                          title={`${formatWeight(warmup.weight)} lb × ${warmup.reps} — ${
+                            warmup.completed ? 'completed' : 'not logged'
+                          }`}
+                        >
+                          {formatWeight(warmup.weight)}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="muted tiny">
+                      {warmupsDone}/{exercise.warmups.length}
+                    </span>
+                  </div>
+                )}
                 {(description !== null || exercise.e1rm !== null) && (
                   <div className="history-ex-foot">
                     {description && (
