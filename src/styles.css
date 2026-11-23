@@ -99,6 +99,17 @@ button {
   text-align: center;
 }
 
+.inline-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.inline-link:hover {
+  color: var(--text);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

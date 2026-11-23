@@ -348,9 +348,17 @@ export function SettingsScreen() {
       <section className="card">
         <h2 className="card-title">Warmups</h2>
         <p className="muted small">
-          T1 and T2 show a checkable warmup ramp above the work sets. Weights are rounded to the
-          nearest 5 lb and use the bar weight from Bar & plates. Changes apply to new workouts. T3
-          accessories have no warmup.
+          T1 and T2 show a checkable warmup ramp above the work sets, based on{' '}
+          <a
+            className="inline-link"
+            href="https://www.baystrength.com/calculating-warmup-sets/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Bay Strength's warmup guide
+          </a>
+          . Weights are rounded to the nearest 5 lb and use the bar weight from Bar & plates. Changes
+          apply to new workouts. T3 accessories have no warmup.
         </p>
         <div className="chip-row warmup-method-row" role="group" aria-label="Warmup method">
           {WARMUP_METHODS.map((method) => (
