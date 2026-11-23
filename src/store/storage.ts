@@ -432,6 +432,55 @@ export function parseImportText(text: string): AppData | null {
   }
 }
 
+/** Backups are small; anything bigger is not a GZCLP backup we want to parse. */
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024
+
+export function normalizeImportUrl(raw: string): string {
+  const trimmed = raw.trim()
+  let url: URL
+  try {
+    url = new URL(trimmed)
+  } catch {
+    throw new Error('Enter a full http(s) URL to a backup file.')
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('Only http(s) URLs can be imported.')
+  }
+  return url.toString()
+}
+
+/**
+ * Fetches a backup over HTTP(S). Most hosts must send CORS headers for a
+ * browser to read the response; a fetcher/proxy in front of the file works
+ * when they do not.
+ */
+export async function readImportUrl(raw: string): Promise<AppData> {
+  const url = normalizeImportUrl(raw)
+
+  let response: Response
+  try {
+    response = await fetch(url, { cache: 'no-store', credentials: 'omit', redirect: 'follow' })
+  } catch {
+    throw new Error(
+      'Could not fetch that URL. Check the link and your connection — the host must also allow cross-origin requests.',
+    )
+  }
+
+  if (!response.ok) throw new Error(`That URL returned ${response.status}.`)
+
+  const declaredSize = Number(response.headers.get('content-length') ?? '')
+  if (Number.isFinite(declaredSize) && declaredSize > MAX_IMPORT_BYTES) {
+    throw new Error('That file is too large to be a GZCLP backup.')
+  }
+
+  const text = await response.text()
+  if (text.length > MAX_IMPORT_BYTES) throw new Error('That file is too large to be a GZCLP backup.')
+
+  const data = parseImportText(text)
+  if (!data) throw new Error('That URL did not return a GZCLP backup.')
+  return data
+}
+
 export async function readImportFile(file: File): Promise<AppData> {
   const data = parseImportText(await file.text())
   if (!data) throw new Error('That file is not a GZCLP backup.')

@@ -33,7 +33,8 @@ linear progression program. Built to be used one-handed between sets.
 - **Interrupted workout?** Finish early; unfinished lifts keep their current weight.
 - **Skip ahead.** Tap "Change day" on the start screen to do any day out of order; weights only
   change when you finish a workout, and the rotation continues from the day you picked.
-- **Everything is local.** No account, no network. Export/import a JSON backup in Settings.
+- **Everything is local.** No account and no backend. Export/import a JSON backup in Settings
+  from a file, or fetch one from a URL while online (the host must allow CORS).
 
 ## The program
 
@@ -88,3 +89,5 @@ public/         icons, manifest assets
   the "Barbell" prefix is added automatically.
 - Progression is applied only when a session is finished, never mid-set.
 - Resets round to the nearest 5 lb with an empty-bar floor.
+- URL import fetches the same JSON backup format. Cross-origin hosts need to send CORS headers;
+  GitHub Gists and similar raw-file endpoints work, but normal GitHub blob pages do not.

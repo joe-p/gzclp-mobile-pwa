@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createInitialData } from './defaults'
-import { migrate, parseImportText } from './storage'
+import { migrate, parseImportText, readImportUrl } from './storage'
 
 describe('migrate', () => {
   it('rejects payloads that are not backups', () => {
@@ -139,6 +139,70 @@ describe('migrate', () => {
 
   it('returns null for invalid JSON', () => {
     expect(parseImportText('not json')).toBeNull()
+  })
+})
+
+describe('readImportUrl', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('fetches and parses a backup', async () => {
+    const backup = createInitialData()
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(backup)))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(readImportUrl('  https://example.com/backup.json  ')).resolves.toEqual(backup)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.com/backup.json',
+      expect.objectContaining({ cache: 'no-store', credentials: 'omit' }),
+    )
+  })
+
+  it('rejects non-http URLs', async () => {
+    await expect(readImportUrl('file:///tmp/backup.json')).rejects.toThrow('Only http(s) URLs')
+    await expect(readImportUrl('not a url')).rejects.toThrow('Enter a full http(s) URL')
+  })
+
+  it('reports failed requests', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('missing', { status: 404 })))
+
+    await expect(readImportUrl('https://example.com/missing.json')).rejects.toThrow('404')
+  })
+
+  it('reports network and CORS failures', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('Failed to fetch')
+      }),
+    )
+
+    await expect(readImportUrl('https://example.com/backup.json')).rejects.toThrow(
+      'cross-origin requests',
+    )
+  })
+
+  it('rejects content that is not a backup', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"ok":true}')))
+
+    await expect(readImportUrl('https://example.com/page')).rejects.toThrow(
+      'did not return a GZCLP backup',
+    )
+  })
+
+  it('rejects oversized responses', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response('{}', { headers: { 'content-length': String(6 * 1024 * 1024) } }),
+      ),
+    )
+
+    await expect(readImportUrl('https://example.com/huge.json')).rejects.toThrow(
+      'too large',
+    )
   })
 })
 

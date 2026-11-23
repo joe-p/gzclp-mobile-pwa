@@ -9,13 +9,13 @@ import {
   stageSpec,
   trackKey,
 } from '../domain/program'
-import type { LiftId, ProgramDay, Tier } from '../domain/types'
+import type { AppData, LiftId, ProgramDay, Tier } from '../domain/types'
 import { formatWeight, minWeightForTier } from '../domain/units'
 import { WARMUP_METHOD_HINTS, WARMUP_METHOD_LABELS, WARMUP_METHODS } from '../domain/warmup'
 import { useApp } from '../store/context'
-import { downloadBackup, readImportFile } from '../store/storage'
+import { downloadBackup, readImportFile, readImportUrl } from '../store/storage'
 import { MoveButtons, WeightRow } from './TrackWeightList'
-import { DownloadIcon, TrashIcon, UploadIcon } from './icons'
+import { DownloadIcon, LinkIcon, TrashIcon, UploadIcon } from './icons'
 import { PlateInventoryEditor } from './PlateInventoryEditor'
 import { RestTierPicker } from './RestTierPicker'
 import { WeightInput } from './WeightInput'
@@ -227,22 +227,51 @@ function DayT3Picker({ day }: { day: ProgramDay }) {
 export function SettingsScreen() {
   const { data, dispatch } = useApp()
   const fileRef = useRef<HTMLInputElement>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
+  const [urlOpen, setUrlOpen] = useState(false)
+  const [url, setUrl] = useState('')
+  const [urlBusy, setUrlBusy] = useState(false)
   const days = programDays(data.t3ByDay)
+
+  const applyImport = (imported: AppData) => {
+    dispatch({
+      type: 'importData',
+      data: { ...imported, settings: { ...imported.settings, setupComplete: true } },
+    })
+  }
 
   const importFile = async (file: File | undefined) => {
     if (!file) return
     try {
-      const imported = await readImportFile(file)
-      dispatch({
-        type: 'importData',
-        data: { ...imported, settings: { ...imported.settings, setupComplete: true } },
+      applyImport(await readImportFile(file))
+      setMessage({ tone: 'ok', text: 'Backup imported.' })
+    } catch (error) {
+      setMessage({
+        tone: 'error',
+        text: error instanceof Error ? error.message : 'Import failed.',
       })
-      setMessage('Backup imported.')
-    } catch {
-      setMessage('Import failed — that file is not a GZCLP backup.')
     } finally {
       if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  const importFromUrl = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (urlBusy || url.trim().length === 0) return
+    setUrlBusy(true)
+    setMessage(null)
+    try {
+      applyImport(await readImportUrl(url))
+      setMessage({ tone: 'ok', text: 'Backup imported from URL.' })
+      setUrl('')
+      setUrlOpen(false)
+    } catch (error) {
+      setMessage({
+        tone: 'error',
+        text: error instanceof Error ? error.message : 'Import failed.',
+      })
+    } finally {
+      setUrlBusy(false)
     }
   }
 
@@ -380,7 +409,7 @@ export function SettingsScreen() {
         <h2 className="card-title">Data</h2>
         <p className="muted small">
           Everything lives on this device. Export a JSON backup before clearing browser data or
-          switching phones.
+          switching phones. You can also import a backup from a file or a URL.
         </p>
         <div className="button-row">
           <button type="button" className="btn btn-ghost" onClick={() => downloadBackup(data)}>
@@ -389,7 +418,16 @@ export function SettingsScreen() {
           </button>
           <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
             <UploadIcon />
-            Import
+            Import file
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            aria-expanded={urlOpen}
+            onClick={() => setUrlOpen((open) => !open)}
+          >
+            <LinkIcon />
+            From URL
           </button>
           <button type="button" className="btn btn-ghost danger" onClick={reset}>
             <TrashIcon />
@@ -403,7 +441,36 @@ export function SettingsScreen() {
           className="sr-only"
           onChange={(event) => void importFile(event.target.files?.[0])}
         />
-        {message && <p className="note">{message}</p>}
+        {urlOpen && (
+          <form className="url-import" onSubmit={(event) => void importFromUrl(event)}>
+            <input
+              type="url"
+              className="url-import-input"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              placeholder="https://example.com/gzclp-backup.json"
+              aria-label="Backup URL"
+              inputMode="url"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              disabled={urlBusy}
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="btn btn-ghost"
+              disabled={urlBusy || url.trim().length === 0}
+            >
+              {urlBusy ? 'Importing…' : 'Import'}
+            </button>
+          </form>
+        )}
+        {message && (
+          <p className={`note ${message.tone === 'error' ? 'note-error' : ''}`} role="status">
+            {message.text}
+          </p>
+        )}
       </section>
 
       <section className="card subtle">
