@@ -18,7 +18,6 @@ import { useApp } from './store/context'
 function Shell() {
   const { data } = useApp()
   const [tab, setTab] = useState<Tab>('workout')
-  const [includeWarmups, setIncludeWarmups] = useState(false)
   const [rest, setRest] = useState<{
     startedAt: number
     min: number
@@ -52,9 +51,7 @@ function Shell() {
       <main className="app-main">
         {tab === 'workout' &&
           (data.activeSession ? <SessionScreen onSetLogged={startRest} /> : <StartSessionCard />)}
-        {tab === 'overview' && (
-          <OverviewScreen includeWarmups={includeWarmups} onToggleWarmups={setIncludeWarmups} />
-        )}
+        {tab === 'overview' && <OverviewScreen />}
         {tab === 'history' && <HistoryScreen />}
         {tab === 'settings' && <SettingsScreen />}
       </main>

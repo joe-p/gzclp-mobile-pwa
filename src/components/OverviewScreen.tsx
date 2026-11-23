@@ -12,13 +12,8 @@ function workoutTag(offset: number, inProgress: boolean): string {
   return `In ${offset} workout${offset === 1 ? '' : 's'}`
 }
 
-interface OverviewScreenProps {
-  includeWarmups: boolean
-  onToggleWarmups: (include: boolean) => void
-}
-
-/** Compact look-ahead at the next full rotation, with an optional warmup ramp. */
-export function OverviewScreen({ includeWarmups, onToggleWarmups }: OverviewScreenProps) {
+/** Compact look-ahead at the next full rotation, with warmup ramps. */
+export function OverviewScreen() {
   const { data } = useApp()
   const days = programDays(data.t3ByDay)
   const workouts = upcomingWorkouts(days, data.nextDayIndex, UPCOMING_COUNT)
@@ -32,21 +27,6 @@ export function OverviewScreen({ includeWarmups, onToggleWarmups }: OverviewScre
           Your next {UPCOMING_COUNT} workouts in order. Weights update as you finish sessions.
         </p>
       </div>
-
-      <section className="card">
-        <label className="toggle-row overview-toggle">
-          <span>
-            <span className="toggle-title">Include warmups</span>
-            <span className="muted small">Show the T1 and T2 ramp for every workout.</span>
-          </span>
-          <input
-            type="checkbox"
-            className="toggle"
-            checked={includeWarmups}
-            onChange={(event) => onToggleWarmups(event.target.checked)}
-          />
-        </label>
-      </section>
 
       {workouts.map((workout) => {
         const inProgress = workout.offset === 0 && activeDayId === workout.day.id
@@ -68,15 +48,13 @@ export function OverviewScreen({ includeWarmups, onToggleWarmups }: OverviewScre
                 const track = data.tracks[key]
                 const lift = resolveLift(data.lifts, slot.liftId)
                 const spec = stageSpec(slot.tier, track.stage)
-                const warmups = includeWarmups
-                  ? warmupSets(
-                      slot.liftId,
-                      slot.tier,
-                      track.weight,
-                      data.settings.plates.bar,
-                      data.settings.warmupMethod,
-                    )
-                  : []
+                const warmups = warmupSets(
+                  slot.liftId,
+                  slot.tier,
+                  track.weight,
+                  data.settings.plates.bar,
+                  data.settings.warmupMethod,
+                )
 
                 return (
                   <li className="overview-lift" key={key}>

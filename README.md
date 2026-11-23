@@ -6,8 +6,8 @@ linear progression program. Built to be used one-handed between sets.
 ## What it does
 
 - **Fixed 4-day GZCLP rotation** (A1 / B1 / A2 / B2) with T1, T2, and T3 work.
-- **Overview** of the next four workouts, with schemes and working weights. Flip on the warmup
-  toggle to see every T1/T2 ramp at a glance.
+- **Overview** of the next four workouts, with schemes, working weights, and every T1/T2 warmup
+  ramp at a glance.
 - **Customizable T3 accessories.** Build one T3 list with a working weight in Settings, then pick
   which days run each accessory from a dropdown. The same exercise shares one weight everywhere.
 - **Tracks current weight per lift and tier.** T1 bench and T2 bench are separate progressions, just
