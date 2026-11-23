@@ -25,6 +25,8 @@ linear progression program. Built to be used one-handed between sets.
 - **History** of every session: sets, AMRAP reps, e1RM, and the weight earned for next time.
 - **Resumable sessions** — reloading the app mid-workout picks up where you left off.
 - **Interrupted workout?** Finish early; unfinished lifts keep their current weight.
+- **Skip ahead.** Tap "Change day" on the start screen to do any day out of order; weights only
+  change when you finish a workout, and the rotation continues from the day you picked.
 - **Everything is local.** No account, no network. Export/import a JSON backup in Settings.
 
 ## The program

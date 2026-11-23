@@ -158,6 +158,37 @@ describe('reducer session lifecycle', () => {
     expect(state.nextDayIndex).toBe(0)
   })
 
+  it('starts a day the user picked instead of the next one in the rotation', () => {
+    let state = onboarded()
+    state = reducer(state, { type: 'selectDay', dayIndex: 3 })
+    expect(state.nextDayIndex).toBe(3)
+
+    state = reducer(state, { type: 'startSession' })
+    expect(state.activeSession?.dayId).toBe('B2')
+  })
+
+  it('keeps the rotation moving from the picked day', () => {
+    let state = onboarded()
+    state = reducer(state, { type: 'selectDay', dayIndex: 3 })
+    state = reducer(state, { type: 'startSession' })
+    for (const index of [0, 1, 2]) state = logExercise(state, index, true)
+    state = reducer(state, { type: 'finishSession' })
+
+    expect(state.nextDayIndex).toBe(0)
+  })
+
+  it('ignores day picks that are out of range or mid-session', () => {
+    let state = onboarded()
+    expect(reducer(state, { type: 'selectDay', dayIndex: 4 })).toBe(state)
+    expect(reducer(state, { type: 'selectDay', dayIndex: -1 })).toBe(state)
+    expect(reducer(state, { type: 'selectDay', dayIndex: Number.NaN })).toBe(state)
+    expect(reducer(state, { type: 'selectDay', dayIndex: 0 })).toBe(state)
+
+    state = reducer(state, { type: 'selectDay', dayIndex: 2 })
+    state = reducer(state, { type: 'startSession' })
+    expect(reducer(state, { type: 'selectDay', dayIndex: 3 })).toBe(state)
+  })
+
   it('resets everything back to onboarding defaults', () => {
     let state = setup()
     for (const index of [0, 1, 2]) state = logExercise(state, index, true)

@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { programDays, resolveLift, schemeLabel, stageSpec, trackKey } from '../domain/program'
 import { formatWeight } from '../domain/units'
 import { useApp } from '../store/context'
 
 export function StartSessionCard() {
   const { data, dispatch } = useApp()
+  const [changingDay, setChangingDay] = useState(false)
   const days = programDays(data.t3ByDay)
-  const day = days[data.nextDayIndex] ?? days[0]
+  const dayIndex = Math.min(Math.max(data.nextDayIndex, 0), days.length - 1)
+  const day = days[dayIndex] ?? days[0]
 
   return (
     <div className="stack">
@@ -15,7 +18,7 @@ export function StartSessionCard() {
           <h1>
             {day.label} · {day.focus}
           </h1>
-          <p className="muted small">Day {data.nextDayIndex + 1} of 4 in the rotation</p>
+          <p className="muted small">Day {dayIndex + 1} of {days.length} in the rotation</p>
         </div>
       </section>
 
@@ -39,12 +42,48 @@ export function StartSessionCard() {
           })}
         </ul>
 
+        <div className="day-switch">
+          <button
+            type="button"
+            className="text-btn day-switch-toggle"
+            aria-expanded={changingDay}
+            aria-controls="day-switch-options"
+            onClick={() => setChangingDay((open) => !open)}
+          >
+            {changingDay ? 'Cancel' : 'Change day'}
+          </button>
+
+          {changingDay && (
+            <div className="day-switch-options" id="day-switch-options">
+              <div className="chip-row">
+                {days.map((option, index) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`chip ${index === dayIndex ? 'is-selected' : ''}`}
+                    aria-pressed={index === dayIndex}
+                    onClick={() => {
+                      dispatch({ type: 'selectDay', dayIndex: index })
+                      setChangingDay(false)
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <p className="muted tiny day-switch-note">
+                Skipping ahead or repeating a day doesn't change any weights.
+              </p>
+            </div>
+          )}
+        </div>
+
         <button
           type="button"
           className="btn btn-primary btn-block start-btn"
           onClick={() => dispatch({ type: 'startSession' })}
         >
-          Start workout
+          Start {day.label} workout
         </button>
       </section>
 

@@ -36,6 +36,7 @@ export type Action =
       plates: PlateInventory
     }
   | { type: 'startSession' }
+  | { type: 'selectDay'; dayIndex: number }
   | { type: 'discardSession' }
   | { type: 'showExercise'; index: number }
   | { type: 'recordSet'; exerciseIndex: number; setIndex: number; success: boolean | null }
@@ -119,6 +120,17 @@ export function reducer(state: AppData, action: Action): AppData {
         activeSession: createSession(day, state.tracks),
         lastSummaryId: null,
       }
+    }
+
+    case 'selectDay': {
+      // Lets the user jump to any day in the rotation, e.g. skip A1 and do B2.
+      if (state.activeSession) return state
+      const dayIndex = Math.trunc(action.dayIndex)
+      if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex >= PROGRAM_DAY_IDS.length) {
+        return state
+      }
+      if (dayIndex === state.nextDayIndex) return state
+      return { ...state, nextDayIndex: dayIndex }
     }
 
     case 'discardSession':

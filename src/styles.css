@@ -587,6 +587,34 @@ button {
   margin-left: 2px;
 }
 
+/* ---------- day switch ---------- */
+
+.day-switch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.day-switch-toggle {
+  font-size: 0.8rem;
+}
+
+.day-switch-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding-bottom: 4px;
+}
+
+.day-switch-note {
+  margin: 0;
+  text-align: center;
+}
+
 .start-btn {
   margin-top: 14px;
 }
