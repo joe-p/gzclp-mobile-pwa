@@ -137,6 +137,20 @@ describe('reducer session lifecycle', () => {
     expect(state.activeSession?.exerciseIndex).toBe(-1)
   })
 
+  it('ignores a set logged before the sets above it', () => {
+    const state = setup()
+    const next = reducer(state, { type: 'recordSet', exerciseIndex: 0, setIndex: 2, success: true })
+    expect(next).toBe(state)
+
+    const afterFirst = reducer(state, { type: 'recordSet', exerciseIndex: 0, setIndex: 0, success: true })
+    const stillLocked = reducer(afterFirst, {
+      type: 'recordAmrap',
+      exerciseIndex: 0,
+      reps: 5,
+    })
+    expect(stillLocked).toBe(afterFirst)
+  })
+
   it('stays put when updating an already-finished lift', () => {
     let state = setup()
     state = logExercise(state, 0, true)

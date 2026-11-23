@@ -4,6 +4,7 @@ import {
   createSession,
   finishesWarmupRamp,
   isSessionComplete,
+  isSetLocked,
   recordAmrapResult,
   recordSetResult,
   recordWarmupResult,
@@ -51,6 +52,15 @@ describe('createSession', () => {
 describe('set recording', () => {
   const base = () => createSession(PROGRAM_DAYS[0], defaultTracks())
 
+  /** Logs the straight sets ahead of the AMRAP so the last set is unlocked. */
+  const readyForAmrap = (exerciseIndex = 0) => {
+    let session = base()
+    for (let setIndex = 0; setIndex < session.exercises[exerciseIndex].sets.length - 1; setIndex++) {
+      session = recordSetResult(session, exerciseIndex, setIndex, true)
+    }
+    return session
+  }
+
   it('marks a normal set and clears it again', () => {
     const marked = recordSetResult(base(), 0, 0, true)
     expect(marked.exercises[0].sets[0]).toMatchObject({ success: true, reps: 3 })
@@ -60,7 +70,7 @@ describe('set recording', () => {
   })
 
   it('records a miss without inventing reps', () => {
-    const missed = recordSetResult(base(), 0, 1, false)
+    const missed = recordSetResult(recordSetResult(base(), 0, 0, true), 0, 1, false)
     expect(missed.exercises[0].sets[1]).toMatchObject({ success: false, reps: null })
   })
 
@@ -71,19 +81,45 @@ describe('set recording', () => {
   })
 
   it('derives AMRAP success and e1RM from reps', () => {
-    const hit = recordAmrapResult(base(), 0, 5)
+    const hit = recordAmrapResult(readyForAmrap(), 0, 5)
     const amrap = hit.exercises[0].sets[4]
     expect(amrap).toMatchObject({ success: true, reps: 5 })
     expect(hit.exercises[0].e1rm).toBe(158)
 
-    const missed = recordAmrapResult(base(), 0, 2)
+    const missed = recordAmrapResult(readyForAmrap(), 0, 2)
     expect(missed.exercises[0].sets[4].success).toBe(false)
     expect(missed.exercises[0].e1rm).toBe(144)
   })
 
   it('does not compute e1RM for T3 accessories', () => {
-    const session = recordAmrapResult(base(), 2, 18)
+    const session = recordAmrapResult(readyForAmrap(2), 2, 18)
     expect(session.exercises[2].e1rm).toBeNull()
+  })
+
+  it('locks every set after the first one without a result', () => {
+    const session = base()
+    expect(isSetLocked(session.exercises[0].sets, 0)).toBe(false)
+    expect(isSetLocked(session.exercises[0].sets, 1)).toBe(true)
+    expect(isSetLocked(session.exercises[0].sets, 4)).toBe(true)
+
+    const afterFirst = recordSetResult(session, 0, 0, true)
+    expect(isSetLocked(afterFirst.exercises[0].sets, 1)).toBe(false)
+    expect(isSetLocked(afterFirst.exercises[0].sets, 2)).toBe(true)
+  })
+
+  it('refuses a result while the set before it is still open', () => {
+    const session = base()
+    expect(recordSetResult(session, 0, 1, true)).toBe(session)
+    expect(recordSetResult(session, 0, 3, false)).toBe(session)
+    expect(recordAmrapResult(session, 0, 8)).toBe(session)
+  })
+
+  it('keeps logged sets editable so a past result can be corrected', () => {
+    const session = recordSetResult(base(), 0, 0, true)
+    expect(isSetLocked(session.exercises[0].sets, 0)).toBe(false)
+
+    const corrected = recordSetResult(session, 0, 0, false)
+    expect(corrected.exercises[0].sets[0]).toMatchObject({ success: false, reps: null })
   })
 
   it('checks and unchecks a warmup without touching work sets', () => {

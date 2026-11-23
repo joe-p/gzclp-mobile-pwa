@@ -85,6 +85,17 @@ export function sessionProgress(session: SessionRecord): { logged: number; total
   return { logged, total }
 }
 
+/**
+ * Sets are logged front to back: a set cannot take a result until every set before
+ * it has one. Sets that already hold a result are never locked, so an earlier
+ * miss can still be corrected (the UI asks for confirmation before doing so).
+ */
+export function isSetLocked(sets: readonly SetRecord[], setIndex: number): boolean {
+  const set = sets[setIndex]
+  if (!set || set.success !== null) return false
+  return sets.slice(0, setIndex).some((earlier) => earlier.success === null)
+}
+
 export function recordSetResult(
   session: ActiveSession,
   exerciseIndex: number,
@@ -94,6 +105,7 @@ export function recordSetResult(
   const exercise = session.exercises[exerciseIndex]
   const target = exercise?.sets[setIndex]
   if (!exercise || !target || target.amrap) return session
+  if (isSetLocked(exercise.sets, setIndex)) return session
 
   const sets = exercise.sets.map((set, index) =>
     index === setIndex ? { ...set, success, reps: success === true ? set.target : null } : set,
@@ -142,7 +154,7 @@ export function recordAmrapResult(
   if (!exercise) return session
   const lastIndex = exercise.sets.length - 1
   const last = exercise.sets[lastIndex]
-  if (!last?.amrap) return session
+  if (!last?.amrap || isSetLocked(exercise.sets, lastIndex)) return session
 
   const count = Math.max(0, Math.round(reps))
   const success = count >= last.target

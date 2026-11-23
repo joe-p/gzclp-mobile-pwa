@@ -1,5 +1,6 @@
 import { describeOutcome, applyProgression, exerciseSucceeded } from '../domain/progression'
 import { resolveLift, schemeLabel, stageSpec } from '../domain/program'
+import { isSetLocked } from '../domain/session'
 import type { ExerciseRecord } from '../domain/types'
 import { formatWeight } from '../domain/units'
 import { useApp } from '../store/context'
@@ -29,7 +30,9 @@ export function ExerciseCard({
   const lift = resolveLift(data.lifts, exercise.liftId)
   const spec = stageSpec(exercise.tier, exercise.stage)
   const logged = exercise.sets.filter((set) => set.success !== null).length
-  const complete = exercise.sets.every((set) => set.success !== null)
+  // Sets are logged in order: everything after the first open set stays locked.
+  const firstOpen = exercise.sets.findIndex((set) => set.success === null)
+  const complete = firstOpen === -1
   const missed = exercise.sets.some((set) => set.success === false)
   const outcome = complete
     ? applyProgression(
@@ -89,6 +92,8 @@ export function ExerciseCard({
                 index={index}
                 set={set}
                 e1rm={exercise.e1rm}
+                locked={isSetLocked(exercise.sets, index)}
+                waitingOn={firstOpen === -1 ? null : firstOpen + 1}
                 onMark={(success) => onMarkSet(index, success)}
                 onLogAmrap={onLogAmrap}
               />

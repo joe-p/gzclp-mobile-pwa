@@ -1082,8 +1082,34 @@ button {
   height: 20px;
 }
 
-.mark:active {
+.mark:active:not(:disabled) {
   transform: scale(0.96);
+}
+
+.mark:disabled {
+  color: var(--dim);
+}
+
+.set-lock {
+  color: var(--dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Locked sets keep their layout but read as unavailable until the set before is logged. */
+.set-row.is-locked .mark,
+.set-row.is-locked .stepper,
+.set-row.is-locked .log-btn {
+  opacity: 0.4;
+}
+
+.set-row.is-locked .mark,
+.set-row.is-locked .stepper button,
+.set-row.is-locked .log-btn {
+  cursor: not-allowed;
 }
 
 .mark.ok.is-active {
