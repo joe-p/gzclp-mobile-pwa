@@ -85,7 +85,14 @@ export interface ActiveSession extends SessionRecord {
   exerciseIndex: number
 }
 
-export type RestByTier = Record<Tier, number>
+export interface RestRange {
+  /** Rest cannot be ended before this many seconds. */
+  min: number
+  /** Once this many seconds pass, warn that the rest is running long. */
+  max: number
+}
+
+export type RestByTier = Record<Tier, RestRange>
 
 /** A plate size and how many *pairs* of it the user owns. */
 export interface PlateStack {
@@ -113,7 +120,9 @@ export interface AppData {
   settings: Settings
   /** Built-in lifts plus user-created T3 accessories. */
   lifts: Record<LiftId, LiftDefinition>
-  /** T3 accessory lift ids per day, in display order. T1/T2 slots are fixed. */
+  /** Every T3 accessory the user has configured, in display order. */
+  t3Library: LiftId[]
+  /** T3 accessory lift ids picked per day, in display order. T1/T2 slots are fixed. */
   t3ByDay: T3ByDay
   tracks: Record<TrackKey, TrackState>
   nextDayIndex: number

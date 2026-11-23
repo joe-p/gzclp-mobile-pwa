@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { normalizePlateInventory } from '../domain/plates'
 import { allTrackKeys, programDays } from '../domain/program'
-import type { PlateInventory, RestByTier, Tier, TrackKey } from '../domain/types'
+import type { PlateInventory, RestByTier, RestRange, Tier, TrackKey } from '../domain/types'
+import { cloneRestByTier } from '../store/defaults'
 import { useApp } from '../store/context'
 import { PlateInventoryEditor } from './PlateInventoryEditor'
 import { RestTierPicker } from './RestTierPicker'
@@ -11,18 +12,18 @@ export function Onboarding() {
   const { data, dispatch } = useApp()
   const [weights, setWeights] = useState<Record<TrackKey, number>>(() => {
     const initial = {} as Record<TrackKey, number>
-    for (const key of allTrackKeys(data.t3ByDay)) initial[key] = data.tracks[key].weight
+    for (const key of allTrackKeys(data.t3ByDay, data.t3Library)) initial[key] = data.tracks[key].weight
     return initial
   })
-  const [restByTier, setRestByTier] = useState<RestByTier>(() => ({ ...data.settings.restByTier }))
+  const [restByTier, setRestByTier] = useState<RestByTier>(() => cloneRestByTier(data.settings.restByTier))
   const [plates, setPlates] = useState<PlateInventory>(() => normalizePlateInventory(data.settings.plates))
 
   const setWeight = (key: TrackKey, weight: number) => {
     setWeights((current) => ({ ...current, [key]: weight }))
   }
 
-  const setRest = (tier: Tier, seconds: number) => {
-    setRestByTier((current) => ({ ...current, [tier]: seconds }))
+  const setRest = (tier: Tier, range: RestRange) => {
+    setRestByTier((current) => ({ ...current, [tier]: range }))
   }
 
   const firstDay = programDays(data.t3ByDay)[0]
@@ -93,7 +94,8 @@ export function Onboarding() {
         <section className="card">
           <h2 className="card-title">Rest timer</h2>
           <p className="muted small">
-            Starts automatically whenever you log a set, using the rest time for that tier.
+            Starts automatically when you log a set. You can skip once the minimum hits; the bar
+            warns when you pass the maximum.
           </p>
           <RestTierPicker value={restByTier} onChange={setRest} />
         </section>

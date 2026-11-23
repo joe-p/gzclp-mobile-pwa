@@ -1,53 +1,83 @@
 import { useEffect, useRef, useState } from 'react'
+import { extendRest, restStatus, restWindow } from '../domain/rest'
+import type { RestAddition, RestPhase } from '../domain/rest'
 import { formatDuration } from '../domain/units'
 
 interface RestTimerBarProps {
-  endsAt: number
-  total: number
+  startedAt: number
+  min: number
+  max: number
   haptics: boolean
   onDismiss: () => void
 }
 
-export function RestTimerBar({ endsAt, total, haptics, onDismiss }: RestTimerBarProps) {
+const PHASE_LABELS: Record<RestPhase, string> = {
+  blocked: 'Resting',
+  ready: 'Rest ready',
+  max: 'Max rest',
+}
+
+function vibrate(pattern: number | number[]): void {
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return
+  navigator.vibrate(pattern)
+}
+
+export function RestTimerBar({ startedAt, min, max, haptics, onDismiss }: RestTimerBarProps) {
   const [now, setNow] = useState(() => Date.now())
-  const [added, setAdded] = useState(0)
-  const firedRef = useRef(false)
+  const [added, setAdded] = useState<RestAddition>({ min: 0, max: 0 })
+  const lastPhaseRef = useRef<RestPhase | null>(null)
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 250)
     return () => window.clearInterval(id)
   }, [])
 
-  const remaining = Math.max(0, (endsAt + added * 1000 - now) / 1000)
-  const done = remaining <= 0
-  const progress = total > 0 ? Math.min(1, Math.max(0, 1 - remaining / total)) : 1
+  const range = restWindow(min, max, added)
+  const elapsed = Math.max(0, (now - startedAt) / 1000)
+  const status = restStatus(range.min, range.max, elapsed)
+  const blocked = status.phase === 'blocked'
+  const maxed = status.phase === 'max'
+  const timeLabel = blocked
+    ? formatDuration(status.toMin)
+    : `+${formatDuration(status.overtime)}`
+  const markerLeft = range.max > 0 ? Math.min(100, (range.min / range.max) * 100) : 100
 
   useEffect(() => {
-    if (!done) {
-      firedRef.current = false
-      return
-    }
-    if (firedRef.current) return
-    firedRef.current = true
-    if (haptics && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-      navigator.vibrate([160, 80, 160])
-    }
-  }, [done, haptics])
+    const previous = lastPhaseRef.current
+    lastPhaseRef.current = status.phase
+    if (!haptics || previous === null || previous === status.phase) return
+    // A short buzz when rest is long enough, a triple buzz once it runs past max.
+    if (status.phase === 'blocked') return
+    vibrate(status.phase === 'max' ? [160, 80, 160] : 80)
+  }, [status.phase, haptics])
 
   return (
-    <div className={`rest-bar ${done ? 'is-done' : ''}`} role="status" aria-live="polite">
-      <div className="rest-fill" style={{ width: `${progress * 100}%` }} />
+    <div className={`rest-bar is-${status.phase}`} role="status" aria-live="polite">
+      <div className="rest-fill" style={{ width: `${status.progress * 100}%` }} />
+      {range.min < range.max && (
+        <div className="rest-mark" style={{ left: `${markerLeft}%` }} aria-hidden="true" />
+      )}
       <div className="rest-inner">
-        <span className="rest-label">{done ? 'Rest complete' : 'Resting'}</span>
-        <span className="rest-time">{done ? 'Go' : formatDuration(remaining)}</span>
+        <span className="rest-label">{PHASE_LABELS[status.phase]}</span>
+        <span className="rest-time">{timeLabel}</span>
         <span className="rest-spacer" />
-        {!done && (
-          <button type="button" className="chip-btn" onClick={() => setAdded((value) => value + 30)}>
+        {!maxed && (
+          <button
+            type="button"
+            className="chip-btn"
+            onClick={() => setAdded((current) => extendRest(current, status.phase))}
+          >
             +30s
           </button>
         )}
-        <button type="button" className="chip-btn" onClick={onDismiss}>
-          {done ? 'Done' : 'Skip'}
+        <button
+          type="button"
+          className="chip-btn"
+          onClick={onDismiss}
+          disabled={blocked}
+          title={blocked ? `Skip unlocks in ${formatDuration(status.toMin)}` : undefined}
+        >
+          {blocked ? 'Skip' : 'Done'}
         </button>
       </div>
     </div>

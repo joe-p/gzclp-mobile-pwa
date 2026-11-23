@@ -1,25 +1,28 @@
 import { defaultPlateInventory, normalizePlateInventory } from '../domain/plates'
-import { cloneT3ByDay, defaultTracks, LIFTS } from '../domain/program'
+import { cloneT3ByDay, cloneT3Library, defaultTracks, LIFTS } from '../domain/program'
 import type { AppData, RestByTier, Settings } from '../domain/types'
 
-export const DATA_VERSION = 4
+export const DATA_VERSION = 6
 
 export const DEFAULT_REST_BY_TIER: RestByTier = {
-  T1: 180,
-  T2: 120,
-  T3: 60,
+  T1: { min: 180, max: 300 },
+  T2: { min: 120, max: 180 },
+  T3: { min: 60, max: 90 },
+}
+
+export function cloneRestByTier(source: RestByTier = DEFAULT_REST_BY_TIER): RestByTier {
+  return {
+    T1: { ...source.T1 },
+    T2: { ...source.T2 },
+    T3: { ...source.T3 },
+  }
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  restByTier: { ...DEFAULT_REST_BY_TIER },
+  restByTier: cloneRestByTier(),
   plates: defaultPlateInventory(),
   setupComplete: false,
   haptics: true,
-}
-
-/** Rest timers are capped at 15 minutes. */
-export function clampRestSeconds(seconds: number): number {
-  return Math.min(900, Math.max(0, Math.trunc(seconds)))
 }
 
 export function createInitialData(): AppData {
@@ -27,12 +30,13 @@ export function createInitialData(): AppData {
     version: DATA_VERSION,
     settings: {
       ...DEFAULT_SETTINGS,
-      restByTier: { ...DEFAULT_REST_BY_TIER },
+      restByTier: cloneRestByTier(),
       plates: normalizePlateInventory(DEFAULT_SETTINGS.plates),
     },
     lifts: { ...LIFTS },
+    t3Library: cloneT3Library(),
     t3ByDay: cloneT3ByDay(),
-    tracks: defaultTracks(),
+    tracks: defaultTracks(cloneT3ByDay(), cloneT3Library()),
     nextDayIndex: 0,
     sessions: [],
     activeSession: null,

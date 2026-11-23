@@ -6,6 +6,7 @@ import {
   normalizeLiftName,
   PROGRAM_DAY_IDS,
   shortForName,
+  t3IdsInDays,
   trackKey,
 } from '../domain/program'
 import type {
@@ -18,6 +19,7 @@ import type {
   PlateInventory,
   PlateStack,
   ProgressionOutcome,
+  RestRange,
   SessionRecord,
   SetRecord,
   Settings,
@@ -26,8 +28,9 @@ import type {
   TrackKey,
   TrackState,
 } from '../domain/types'
+import { clampRestSeconds, normalizeRestRange } from '../domain/rest'
 import { minWeightForTier, sanitizeWeight } from '../domain/units'
-import { clampRestSeconds, createInitialData, DATA_VERSION, DEFAULT_REST_BY_TIER } from './defaults'
+import { cloneRestByTier, createInitialData, DATA_VERSION, DEFAULT_REST_BY_TIER } from './defaults'
 
 export const STORAGE_KEY = 'gzclp.data.v1'
 
@@ -110,6 +113,25 @@ function readT3ByDay(value: unknown, lifts: Record<LiftId, LiftDefinition>): T3B
     t3ByDay[dayId] = ids
   }
   return t3ByDay
+}
+
+/**
+ * Reads the accessory library. Backups from before accessories were picked per
+ * day fall back to the unique accessories already used in the program.
+ */
+function readT3Library(value: unknown, t3ByDay: T3ByDay): LiftId[] {
+  const ids: LiftId[] = []
+  const add = (liftId: LiftId) => {
+    if (!ids.includes(liftId)) ids.push(liftId)
+  }
+
+  if (Array.isArray(value)) {
+    for (const entry of value) if (isLiftId(entry)) add(entry)
+  }
+  // Every accessory a day uses must stay pickable, so a backup with a partial
+  // (or missing) library still works.
+  for (const liftId of t3IdsInDays(t3ByDay)) add(liftId)
+  return ids
 }
 
 function splitTrackKey(key: string): { liftId: LiftId; tier: Tier } | null {
@@ -214,20 +236,41 @@ function readPlateInventory(value: unknown): PlateInventory {
 }
 
 /**
- * Reads per-tier rest times, falling back to the pre-v2 single `restSeconds`
+ * Upgrades a pre-range rest time. The old single value becomes the minimum,
+ * paired with the standard upper bound so existing installs get the new
+ * blocking/warning behavior without losing their chosen rest time.
+ */
+function restRangeFromSeconds(seconds: number, tier: Tier): RestRange {
+  const min = clampRestSeconds(seconds)
+  return { min, max: Math.max(min, DEFAULT_REST_BY_TIER[tier].max) }
+}
+
+function readRestRange(value: unknown, tier: Tier): RestRange {
+  if (typeof value === 'number' && Number.isFinite(value)) return restRangeFromSeconds(value, tier)
+  if (!isObject(value)) return { ...DEFAULT_REST_BY_TIER[tier] }
+
+  const fallback = DEFAULT_REST_BY_TIER[tier]
+  return normalizeRestRange({
+    min: readNumber(value.min, fallback.min),
+    max: readNumber(value.max, fallback.max),
+  })
+}
+
+/**
+ * Reads per-tier rest ranges, falling back to the pre-v2 single `restSeconds`
  * value (applied to every tier) and then to defaults.
  */
 function readRestByTier(rawSettings: Record<string, unknown>): Settings['restByTier'] {
   const legacy = readNumber(rawSettings.restSeconds, NaN)
   const perTier = isObject(rawSettings.restByTier) ? rawSettings.restByTier : null
-  const restByTier = { ...DEFAULT_REST_BY_TIER }
+  const restByTier = cloneRestByTier()
 
   for (const tier of TIERS) {
     const stored = perTier?.[tier]
-    if (typeof stored === 'number' && Number.isFinite(stored)) {
-      restByTier[tier] = clampRestSeconds(stored)
+    if (stored !== undefined) {
+      restByTier[tier] = readRestRange(stored, tier)
     } else if (Number.isFinite(legacy)) {
-      restByTier[tier] = clampRestSeconds(legacy)
+      restByTier[tier] = restRangeFromSeconds(legacy, tier)
     }
   }
 
@@ -244,7 +287,8 @@ export function migrate(raw: unknown): AppData | null {
 
   const lifts = readLifts(raw.lifts)
   const t3ByDay = readT3ByDay(raw.t3ByDay, lifts)
-  const tracks: Record<TrackKey, TrackState> = defaultTracks(t3ByDay)
+  const libraryIds = readT3Library(raw.t3Library, t3ByDay)
+  const tracks: Record<TrackKey, TrackState> = defaultTracks(t3ByDay, libraryIds)
 
   for (const [key, stored] of Object.entries(raw.tracks)) {
     if (!isObject(stored) || typeof stored.weight !== 'number' || !Number.isFinite(stored.weight)) continue
@@ -258,6 +302,10 @@ export function migrate(raw: unknown): AppData | null {
       stage: Math.max(0, Math.trunc(readNumber(stored.stage, 0))),
     }
   }
+
+  // Drop library entries whose lift definition is gone; the tracks loop above
+  // rebuilds placeholders for anything still referenced by history.
+  const t3Library = libraryIds.filter((liftId) => hasLift(lifts, liftId))
 
   const rawSettings = isObject(raw.settings) ? raw.settings : {}
   const settings: Settings = {
@@ -290,6 +338,7 @@ export function migrate(raw: unknown): AppData | null {
     version: DATA_VERSION,
     settings,
     lifts,
+    t3Library,
     t3ByDay,
     tracks,
     nextDayIndex: Math.min(

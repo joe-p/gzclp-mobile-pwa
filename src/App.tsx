@@ -17,14 +17,19 @@ import { useApp } from './store/context'
 function Shell() {
   const { data } = useApp()
   const [tab, setTab] = useState<Tab>('workout')
-  const [rest, setRest] = useState<{ endsAt: number; total: number; sessionId: string } | null>(null)
+  const [rest, setRest] = useState<{
+    startedAt: number
+    min: number
+    max: number
+    sessionId: string
+  } | null>(null)
 
   const startRest = useCallback(
     (tier: Tier) => {
-      const seconds = data.settings.restByTier[tier] ?? 0
+      const range = data.settings.restByTier[tier]
       const sessionId = data.activeSession?.id
-      if (seconds <= 0 || !sessionId) return
-      setRest({ endsAt: Date.now() + seconds * 1000, total: seconds, sessionId })
+      if (!range || range.max <= 0 || !sessionId) return
+      setRest({ startedAt: Date.now(), min: range.min, max: range.max, sessionId })
     },
     [data.settings.restByTier, data.activeSession?.id],
   )
@@ -53,8 +58,10 @@ function Shell() {
         {tab === 'workout' && data.activeSession && <SessionFooter />}
         {activeRest && (
           <RestTimerBar
-            endsAt={activeRest.endsAt}
-            total={activeRest.total}
+            key={activeRest.startedAt}
+            startedAt={activeRest.startedAt}
+            min={activeRest.min}
+            max={activeRest.max}
             haptics={data.settings.haptics}
             onDismiss={() => setRest(null)}
           />

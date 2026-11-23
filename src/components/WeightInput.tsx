@@ -9,6 +9,8 @@ interface WeightInputProps {
   /** Lowest allowed weight. T3 accessories pass 0 so they can be unweighted. */
   min?: number
   id?: string
+  /** Narrower control for side-by-side grids. */
+  compact?: boolean
 }
 
 export function WeightInput({
@@ -18,6 +20,7 @@ export function WeightInput({
   step = WEIGHT_STEP,
   min = MIN_WEIGHT,
   id,
+  compact = false,
 }: WeightInputProps) {
   // `draft` is only set while the field is being edited, so external weight
   // changes (stepper, reset, import) always show up without a sync effect.
@@ -39,7 +42,7 @@ export function WeightInput({
   }
 
   return (
-    <div className="weight-input">
+    <div className={`weight-input${compact ? ' is-compact' : ''}`}>
       <button type="button" className="step-btn" onClick={() => nudge(-step)} aria-label={`Decrease ${label}`}>
         −
       </button>

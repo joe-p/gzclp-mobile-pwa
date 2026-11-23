@@ -11,7 +11,7 @@ function setup(): AppData {
   state = reducer(state, {
     type: 'saveSetup',
     weights,
-    restByTier: { T1: 180, T2: 120, T3: 60 },
+    restByTier: { T1: { min: 180, max: 300 }, T2: { min: 120, max: 180 }, T3: { min: 60, max: 90 } },
     plates: state.settings.plates,
   })
   state = reducer(state, { type: 'startSession' })
@@ -209,7 +209,7 @@ function onboarded(): AppData {
   return reducer(state, {
     type: 'saveSetup',
     weights,
-    restByTier: { T1: 180, T2: 120, T3: 60 },
+    restByTier: { T1: { min: 180, max: 300 }, T2: { min: 120, max: 180 }, T3: { min: 60, max: 90 } },
     plates: state.settings.plates,
   })
 }
@@ -221,14 +221,24 @@ function liftIdFor(state: AppData, name: string): string {
 }
 
 describe('reducer T3 accessories', () => {
-  it('adds a custom accessory with a track and a slot in the next session', () => {
+  it('creates an accessory in the library with a track and no day yet', () => {
     let state = onboarded()
-    state = reducer(state, { type: 'addT3', dayId: 'A1', name: '  Leg   Press ', barbell: false })
+    state = reducer(state, { type: 'createT3', name: '  Leg   Press ', barbell: false })
     const id = liftIdFor(state, 'Leg Press')
 
     expect(state.lifts[id]).toMatchObject({ name: 'Leg Press', barbell: false })
-    expect(state.t3ByDay.A1).toEqual(['latpulldown', id])
+    expect(state.t3Library).toEqual(['latpulldown', 'row', id])
+    expect(state.t3ByDay.A1).toEqual(['latpulldown'])
     expect(state.tracks[`${id}:T3`]).toEqual({ weight: 45, stage: 0 })
+  })
+
+  it('adds a library accessory to a day and keeps that order in a session', () => {
+    let state = onboarded()
+    state = reducer(state, { type: 'createT3', name: 'Leg Press', barbell: false })
+    const id = liftIdFor(state, 'Leg Press')
+    state = reducer(state, { type: 'assignT3', dayId: 'A1', liftId: id })
+
+    expect(state.t3ByDay.A1).toEqual(['latpulldown', id])
 
     state = reducer(state, { type: 'startSession' })
     expect(state.activeSession?.exercises.map((exercise) => exercise.liftId)).toEqual([
@@ -239,11 +249,23 @@ describe('reducer T3 accessories', () => {
     ])
   })
 
-  it('shares one progression when the same accessory is added to two days', () => {
+  it('ignores assigning an accessory that is not in the library or already there', () => {
     let state = onboarded()
-    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'Leg Press', barbell: false })
+    expect(reducer(state, { type: 'assignT3', dayId: 'A1', liftId: 'nope' })).toBe(state)
+    expect(reducer(state, { type: 'assignT3', dayId: 'A1', liftId: 'latpulldown' })).toBe(state)
+
+    state = reducer(state, { type: 'createT3', name: 'Leg Press', barbell: false })
     const id = liftIdFor(state, 'Leg Press')
-    state = reducer(state, { type: 'addT3', dayId: 'A2', name: 'leg press', barbell: false })
+    state = reducer(state, { type: 'assignT3', dayId: 'A1', liftId: id })
+    expect(reducer(state, { type: 'assignT3', dayId: 'A1', liftId: id })).toBe(state)
+  })
+
+  it('shares one weight when the same accessory is used on two days', () => {
+    let state = onboarded()
+    state = reducer(state, { type: 'createT3', name: 'Leg Press', barbell: false })
+    const id = liftIdFor(state, 'Leg Press')
+    state = reducer(state, { type: 'assignT3', dayId: 'A1', liftId: id })
+    state = reducer(state, { type: 'assignT3', dayId: 'A2', liftId: id })
 
     expect(state.t3ByDay.A2).toContain(id)
     expect(
@@ -251,47 +273,59 @@ describe('reducer T3 accessories', () => {
     ).toHaveLength(1)
 
     state = reducer(state, { type: 'updateTrackWeight', key: `${id}:T3`, weight: 120 })
-    state = reducer(state, { type: 'addT3', dayId: 'B1', name: 'Leg Press', barbell: false })
+    state = reducer(state, { type: 'assignT3', dayId: 'B1', liftId: id })
     expect(state.tracks[`${id}:T3`]).toEqual({ weight: 120, stage: 0 })
   })
 
   it('removes an accessory from one day but keeps its lift and track', () => {
     let state = onboarded()
-    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'Leg Press', barbell: false })
+    state = reducer(state, { type: 'createT3', name: 'Leg Press', barbell: false })
     const id = liftIdFor(state, 'Leg Press')
-    state = reducer(state, { type: 'addT3', dayId: 'A2', name: 'Leg Press', barbell: false })
+    state = reducer(state, { type: 'assignT3', dayId: 'A1', liftId: id })
+    state = reducer(state, { type: 'assignT3', dayId: 'A2', liftId: id })
 
-    state = reducer(state, { type: 'removeT3', dayId: 'A1', liftId: id })
+    state = reducer(state, { type: 'unassignT3', dayId: 'A1', liftId: id })
     expect(state.t3ByDay.A1).not.toContain(id)
     expect(state.t3ByDay.A2).toContain(id)
+    expect(state.t3Library).toContain(id)
     expect(state.lifts[id]).toBeDefined()
     expect(state.tracks[`${id}:T3`]).toBeDefined()
   })
 
+  it('deletes a library accessory from every day but keeps its weight', () => {
+    let state = onboarded()
+    state = reducer(state, { type: 'updateTrackWeight', key: 'row:T3', weight: 105 })
+    state = reducer(state, { type: 'deleteT3', liftId: 'row' })
+
+    expect(state.t3Library).toEqual(['latpulldown'])
+    expect(state.t3ByDay).toEqual({ A1: ['latpulldown'], B1: [], A2: ['latpulldown'], B2: [] })
+    expect(state.tracks['row:T3']).toEqual({ weight: 105, stage: 0 })
+    expect(reducer(state, { type: 'deleteT3', liftId: 'row' })).toBe(state)
+  })
+
   it('reuses a built-in lift and its weight when re-added by name', () => {
     let state = onboarded()
-    state = reducer(state, { type: 'removeT3', dayId: 'A1', liftId: 'latpulldown' })
-    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'lat pulldown', barbell: false })
+    state = reducer(state, { type: 'deleteT3', liftId: 'latpulldown' })
+    state = reducer(state, { type: 'createT3', name: 'lat pulldown', barbell: false })
 
-    expect(state.t3ByDay.A1).toEqual(['latpulldown'])
+    expect(state.t3Library).toContain('latpulldown')
     expect(state.lifts.latpulldown.barbell).toBe(false)
     expect(state.tracks['latpulldown:T3']).toEqual({ weight: 70, stage: 0 })
   })
 
   it('automatically prefixes barbell accessories with "Barbell"', () => {
     const before = onboarded()
-    const added = reducer(before, { type: 'addT3', dayId: 'A1', name: ' Curl ', barbell: true })
+    const added = reducer(before, { type: 'createT3', name: ' Curl ', barbell: true })
     const id = liftIdFor(added, 'Barbell Curl')
 
     expect(added.lifts[id].barbell).toBe(true)
-    expect(added.t3ByDay.A1).toContain(id)
+    expect(added.t3Library).toContain(id)
   })
 
   it('does not add the Barbell prefix twice', () => {
     const before = onboarded()
     const added = reducer(before, {
-      type: 'addT3',
-      dayId: 'A1',
+      type: 'createT3',
       name: 'barbell curl',
       barbell: true,
     })
@@ -302,10 +336,12 @@ describe('reducer T3 accessories', () => {
 
   it('reorders accessories within a day and keeps the new order in a session', () => {
     let state = onboarded()
-    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'Leg Press', barbell: false })
-    state = reducer(state, { type: 'addT3', dayId: 'A1', name: 'Curl', barbell: false })
+    state = reducer(state, { type: 'createT3', name: 'Leg Press', barbell: false })
+    state = reducer(state, { type: 'createT3', name: 'Curl', barbell: false })
     const legPress = liftIdFor(state, 'Leg Press')
     const curl = liftIdFor(state, 'Curl')
+    state = reducer(state, { type: 'assignT3', dayId: 'A1', liftId: legPress })
+    state = reducer(state, { type: 'assignT3', dayId: 'A1', liftId: curl })
 
     expect(state.t3ByDay.A1).toEqual(['latpulldown', legPress, curl])
 
@@ -359,7 +395,7 @@ describe('reducer T3 accessories', () => {
     state = reducer(state, {
       type: 'saveSetup',
       weights,
-      restByTier: { T1: 180, T2: 120, T3: 60 },
+      restByTier: { T1: { min: 180, max: 300 }, T2: { min: 120, max: 180 }, T3: { min: 60, max: 90 } },
       plates: state.settings.plates,
     })
     expect(state.tracks['latpulldown:T3'].weight).toBe(0)
@@ -372,13 +408,33 @@ describe('reducer T3 accessories', () => {
     expect(state.sessions[0].exercises[2].weight).toBe(0)
   })
 
-  it('ignores blank and duplicate additions', () => {
+  it('ignores blank and duplicate creations', () => {
     const before = onboarded()
-    expect(reducer(before, { type: 'addT3', dayId: 'A1', name: '   ', barbell: false })).toBe(before)
+    expect(reducer(before, { type: 'createT3', name: '   ', barbell: false })).toBe(before)
 
-    const added = reducer(before, { type: 'addT3', dayId: 'A1', name: 'Leg Press', barbell: false })
-    expect(reducer(added, { type: 'addT3', dayId: 'A1', name: ' leg press ', barbell: false })).toBe(
-      added,
-    )
+    const added = reducer(before, { type: 'createT3', name: 'Leg Press', barbell: false })
+    expect(reducer(added, { type: 'createT3', name: ' leg press ', barbell: false })).toBe(added)
+  })
+})
+
+describe('reducer rest ranges', () => {
+  it('clamps a range and keeps max at or above min when settings change', () => {
+    let state = onboarded()
+    state = reducer(state, {
+      type: 'updateSettings',
+      patch: {
+        restByTier: {
+          T1: { min: 5000, max: 60 },
+          T2: { min: -10, max: 5000 },
+          T3: { min: 90, max: 60 },
+        },
+      },
+    })
+
+    expect(state.settings.restByTier).toEqual({
+      T1: { min: 900, max: 900 },
+      T2: { min: 0, max: 900 },
+      T3: { min: 90, max: 90 },
+    })
   })
 })

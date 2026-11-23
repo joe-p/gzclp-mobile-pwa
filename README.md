@@ -6,8 +6,8 @@ linear progression program. Built to be used one-handed between sets.
 ## What it does
 
 - **Fixed 4-day GZCLP rotation** (A1 / B1 / A2 / B2) with T1, T2, and T3 work.
-- **Customizable T3 accessories.** Add, remove, and reorder accessory exercises per day in
-  Settings; the same exercise on multiple days shares one working weight.
+- **Customizable T3 accessories.** Build one T3 list with a working weight in Settings, then pick
+  which days run each accessory from a dropdown. The same exercise shares one weight everywhere.
 - **Tracks current weight per lift and tier.** T1 bench and T2 bench are separate progressions, just
   like the spreadsheet.
 - **Per-set logging.** Tap ✓ or ✗ for each set, including the AMRAP set.
@@ -21,7 +21,7 @@ linear progression program. Built to be used one-handed between sets.
 - **Plate loading.** Enter the bar weight and how many pairs of each plate you own during onboarding
   or in Settings. Every exercise shows the plates to put on each side for its working weight, and
   warns when your rack can't make the exact jump.
-- **Rest timer** starts when you log a set, with a configurable time per tier (T1/T2/T3), +30 s, and optional vibration.
+- **Rest range timer** starts when you log a set. Each tier has a configurable min/max (defaults: T1 3–5 min, T2 2–3 min, T3 60–90 s). You can't skip before the minimum; passing the maximum triggers a warning, and +30 s and optional vibration are available.
 - **History** of every session: sets, AMRAP reps, e1RM, and the weight earned for next time.
 - **Resumable sessions** — reloading the app mid-workout picks up where you left off.
 - **Interrupted workout?** Finish early; unfinished lifts keep their current weight.
@@ -39,7 +39,7 @@ linear progression program. Built to be used one-handed between sets.
 | B2  | Deadlift               | Overhead Press         | Barbell Row |
 
 The last set of every lift is AMRAP. Leave 1–2 reps in the tank rather than grinding to failure.
-T1/T2 slots are fixed; each day's T3 list can be edited and reordered under Settings.
+T1/T2 slots are fixed; each day's T3 picks and their order are edited under Settings.
 
 ## Stack
 

@@ -24,28 +24,61 @@ describe('migrate', () => {
     expect(data?.tracks['bench:T1'].weight).toBe(initial.tracks['bench:T1'].weight)
     expect(data?.nextDayIndex).toBe(3)
     expect(data?.settings.setupComplete).toBe(true)
-    expect(data?.settings.restByTier).toEqual({ T1: 180, T2: 120, T3: 60 })
+    expect(data?.settings.restByTier).toEqual({
+      T1: { min: 180, max: 300 },
+      T2: { min: 120, max: 180 },
+      T3: { min: 60, max: 90 },
+    })
     expect(data?.settings.haptics).toBe(true)
   })
 
-  it('applies a legacy single rest time to every tier', () => {
+  it('upgrades a legacy single rest time to a range on every tier', () => {
     const data = migrate({
       version: 1,
       settings: { setupComplete: true, restSeconds: 240 },
       tracks: {},
     })
 
-    expect(data?.settings.restByTier).toEqual({ T1: 240, T2: 240, T3: 240 })
+    expect(data?.settings.restByTier).toEqual({
+      T1: { min: 240, max: 300 },
+      T2: { min: 240, max: 240 },
+      T3: { min: 240, max: 240 },
+    })
   })
 
-  it('reads and clamps per-tier rest times', () => {
+  it('upgrades pre-range per-tier rest times using the standard upper bound', () => {
     const data = migrate({
-      version: 2,
-      settings: { setupComplete: true, restByTier: { T1: 300, T2: -5, T3: 5000 } },
+      version: 4,
+      settings: { setupComplete: true, restByTier: { T1: 180, T2: 120, T3: 60 } },
       tracks: {},
     })
 
-    expect(data?.settings.restByTier).toEqual({ T1: 300, T2: 0, T3: 900 })
+    expect(data?.settings.restByTier).toEqual({
+      T1: { min: 180, max: 300 },
+      T2: { min: 120, max: 180 },
+      T3: { min: 60, max: 90 },
+    })
+  })
+
+  it('reads and clamps per-tier rest ranges', () => {
+    const data = migrate({
+      version: 5,
+      settings: {
+        setupComplete: true,
+        restByTier: {
+          T1: { min: 300, max: 200 },
+          T2: { min: -5, max: 5000 },
+          T3: { min: 45, max: 90 },
+        },
+      },
+      tracks: {},
+    })
+
+    expect(data?.settings.restByTier).toEqual({
+      T1: { min: 300, max: 300 },
+      T2: { min: 0, max: 900 },
+      T3: { min: 45, max: 90 },
+    })
   })
 
   it('gives pre-plate backups the default bar and plate set', () => {
@@ -81,7 +114,11 @@ describe('migrate', () => {
 
   it('round-trips an exported backup', () => {
     const initial = createInitialData()
-    initial.settings = { ...initial.settings, setupComplete: true, restByTier: { T1: 300, T2: 180, T3: 60 } }
+    initial.settings = {
+      ...initial.settings,
+      setupComplete: true,
+      restByTier: { T1: { min: 300, max: 300 }, T2: { min: 120, max: 180 }, T3: { min: 60, max: 90 } },
+    }
     expect(parseImportText(JSON.stringify(initial))).toEqual(initial)
   })
 
@@ -128,6 +165,7 @@ describe('migrate accessories', () => {
       barbell: false,
     }
     initial.lifts[lift.id] = lift
+    initial.t3Library.push(lift.id)
     initial.t3ByDay.A1 = ['latpulldown', lift.id]
     initial.tracks['custom_legpress:T3'] = { weight: 90, stage: 0 }
 
@@ -136,17 +174,40 @@ describe('migrate accessories', () => {
 
   it('respects a day with no T3 accessories', () => {
     const initial = createInitialData()
-    const tracks = { ...initial.tracks }
-    delete tracks['latpulldown:T3']
     const data = migrate({
       ...initial,
-      tracks,
+      t3Library: ['row'],
       t3ByDay: { A1: [], B1: ['row'], A2: [], B2: [] },
     })
 
     expect(data?.t3ByDay).toEqual({ A1: [], B1: ['row'], A2: [], B2: [] })
-    expect(data?.tracks['latpulldown:T3']).toBeUndefined()
+    expect(data?.t3Library).toEqual(['row'])
+    // Library accessories keep their weight even while no day uses them.
     expect(data?.tracks['row:T3']).toEqual(initial.tracks['row:T3'])
+  })
+
+  it('rebuilds the library from the days when a backup has none', () => {
+    const initial = createInitialData()
+    const { t3Library, ...legacy } = initial
+    expect(t3Library.length).toBeGreaterThan(0)
+
+    const data = migrate(legacy)
+
+    expect(data?.t3Library).toEqual(['latpulldown', 'row'])
+    expect(data?.tracks['latpulldown:T3']).toEqual(initial.tracks['latpulldown:T3'])
+  })
+
+  it('keeps a library accessory the days no longer use', () => {
+    const initial = createInitialData()
+    const data = migrate({
+      ...initial,
+      t3Library: ['latpulldown', 'row'],
+      t3ByDay: { A1: [], B1: [], A2: [], B2: [] },
+      tracks: { ...initial.tracks, 'row:T3': { weight: 105, stage: 0 } },
+    })
+
+    expect(data?.t3Library).toEqual(['latpulldown', 'row'])
+    expect(data?.tracks['row:T3']).toEqual({ weight: 105, stage: 0 })
   })
 
   it('drops malformed custom lifts and unknown day ids', () => {

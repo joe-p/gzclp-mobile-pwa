@@ -55,6 +55,24 @@ export function cloneT3ByDay(source: T3ByDay = DEFAULT_T3_BY_DAY): T3ByDay {
   }
 }
 
+/** Unique accessory ids across every day, in rotation order. */
+export function t3IdsInDays(t3ByDay: T3ByDay): LiftId[] {
+  const ids: LiftId[] = []
+  for (const dayId of PROGRAM_DAY_IDS) {
+    for (const liftId of t3ByDay[dayId] ?? []) {
+      if (!ids.includes(liftId)) ids.push(liftId)
+    }
+  }
+  return ids
+}
+
+/** Accessories the user can pick from, independent of which days use them. */
+export const DEFAULT_T3_LIBRARY: readonly LiftId[] = t3IdsInDays(DEFAULT_T3_BY_DAY)
+
+export function cloneT3Library(source: readonly LiftId[] = DEFAULT_T3_LIBRARY): LiftId[] {
+  return [...source]
+}
+
 /** Builds the full program, keeping fixed T1/T2 slots and appending each day's T3 list. */
 export function programDays(t3ByDay: T3ByDay = DEFAULT_T3_BY_DAY): ProgramDay[] {
   return DAY_META.map((day) => ({
@@ -201,7 +219,10 @@ export function defaultWeightFor(liftId: LiftId, tier: Tier): number {
 }
 
 /** Unique track keys in program order. */
-export function allTrackKeys(t3ByDay: T3ByDay = DEFAULT_T3_BY_DAY): TrackKey[] {
+export function allTrackKeys(
+  t3ByDay: T3ByDay = DEFAULT_T3_BY_DAY,
+  t3Library: readonly LiftId[] = t3IdsInDays(t3ByDay),
+): TrackKey[] {
   const keys: TrackKey[] = []
   for (const day of programDays(t3ByDay)) {
     for (const slot of day.slots) {
@@ -209,22 +230,50 @@ export function allTrackKeys(t3ByDay: T3ByDay = DEFAULT_T3_BY_DAY): TrackKey[] {
       if (!keys.includes(key)) keys.push(key)
     }
   }
+  for (const liftId of t3Library) {
+    const key = trackKey(liftId, 'T3')
+    if (!keys.includes(key)) keys.push(key)
+  }
   return keys
 }
 
+/** The day that programs a lift at a tier, e.g. squat at T2 -> A2. */
+export function dayForSlot(
+  days: readonly ProgramDay[],
+  liftId: LiftId,
+  tier: Tier,
+): ProgramDay | undefined {
+  return days.find((day) => day.slots.some((slot) => slot.liftId === liftId && slot.tier === tier))
+}
+
+/** Default track state for one lift and tier. */
+export function defaultTrack(liftId: LiftId, tier: Tier): TrackState {
+  return {
+    weight: sanitizeWeight(defaultWeightFor(liftId, tier), minWeightForTier(tier)),
+    stage: 0,
+  }
+}
+
+/**
+ * Tracks for the whole program plus every library accessory, so a T3 keeps its
+ * weight even while no day is using it.
+ */
 export function defaultTracks(
   t3ByDay: T3ByDay = DEFAULT_T3_BY_DAY,
+  t3Library: readonly LiftId[] = t3IdsInDays(t3ByDay),
 ): Record<TrackKey, TrackState> {
   const tracks = {} as Record<TrackKey, TrackState>
   for (const day of programDays(t3ByDay)) {
     for (const slot of day.slots) {
       const key = trackKey(slot.liftId, slot.tier)
       if (tracks[key]) continue
-      tracks[key] = {
-        weight: sanitizeWeight(defaultWeightFor(slot.liftId, slot.tier), minWeightForTier(slot.tier)),
-        stage: 0,
-      }
+      tracks[key] = defaultTrack(slot.liftId, slot.tier)
     }
+  }
+  for (const liftId of t3Library) {
+    const key = trackKey(liftId, 'T3')
+    if (tracks[key]) continue
+    tracks[key] = defaultTrack(liftId, 'T3')
   }
   return tracks
 }
@@ -267,5 +316,3 @@ export function slotsForTier(
 }
 
 export const TIERS: readonly Tier[] = ['T1', 'T2', 'T3']
-
-export const REST_CHOICES: readonly number[] = [60, 120, 180, 300]
