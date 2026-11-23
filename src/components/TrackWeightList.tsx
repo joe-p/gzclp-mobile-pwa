@@ -1,3 +1,4 @@
+import { e1rmForStage } from '../domain/onerm'
 import { resolveLift, slotsForTier, stageSpec, trackKey } from '../domain/program'
 import type {
   LiftDefinition,
@@ -7,6 +8,7 @@ import type {
   Tier,
   TrackKey,
 } from '../domain/types'
+import { formatWeight } from '../domain/units'
 import { WeightInput } from './WeightInput'
 
 interface WeightRowProps {
@@ -15,6 +17,7 @@ interface WeightRowProps {
   weight: number
   stage: number
   showStage: boolean
+  showE1rm?: boolean
   note?: string
   removeLabel?: string
   onRemove?: () => void
@@ -27,12 +30,14 @@ function WeightRow({
   weight,
   stage,
   showStage,
+  showE1rm = false,
   note,
   removeLabel,
   onRemove,
   onChange,
 }: WeightRowProps) {
   const spec = stageSpec(tier, stage)
+  const e1rm = showE1rm ? e1rmForStage(weight, tier, stage) : null
   return (
     <li className={`weight-row ${onRemove ? 'has-remove' : ''}`}>
       <div className="weight-meta">
@@ -44,6 +49,11 @@ function WeightRow({
             {showStage && tier !== 'T3' ? ` · stage ${stage + 1}` : ''}
             {note ? ` · ${note}` : ''}
           </div>
+          {e1rm !== null && (
+            <div className="weight-e1rm" title="Estimated one-rep max (Epley formula)">
+              e1RM {formatWeight(e1rm)} lb
+            </div>
+          )}
         </div>
       </div>
       <WeightInput value={weight} label={`${lift.name} ${tier}`} onChange={onChange} />
@@ -68,6 +78,7 @@ interface TrackWeightListProps {
   weightFor: (key: TrackKey) => number
   onChange: (key: TrackKey, weight: number) => void
   stageFor?: (key: TrackKey) => number
+  showE1rm?: boolean
 }
 
 export function TrackWeightList({
@@ -77,6 +88,7 @@ export function TrackWeightList({
   weightFor,
   onChange,
   stageFor,
+  showE1rm = false,
 }: TrackWeightListProps) {
   return (
     <ul className="weight-list">
@@ -88,6 +100,7 @@ export function TrackWeightList({
           weight={weightFor(key)}
           stage={stageFor ? stageFor(key) : 0}
           showStage={Boolean(stageFor)}
+          showE1rm={showE1rm}
           onChange={(weight) => onChange(key, weight)}
         />
       ))}
@@ -102,6 +115,7 @@ interface DayWeightListProps {
   weightFor: (key: TrackKey) => number
   onChange: (key: TrackKey, weight: number) => void
   stageFor?: (key: TrackKey) => number
+  showE1rm?: boolean
   onRemoveT3: (liftId: LiftId) => void
 }
 
@@ -112,6 +126,7 @@ export function DayWeightList({
   weightFor,
   onChange,
   stageFor,
+  showE1rm = false,
   onRemoveT3,
 }: DayWeightListProps) {
   return (
@@ -134,6 +149,7 @@ export function DayWeightList({
             weight={weightFor(key)}
             stage={stageFor ? stageFor(key) : 0}
             showStage={Boolean(stageFor)}
+            showE1rm={showE1rm}
             note={otherDays.length ? `shared with ${otherDays.join(', ')}` : undefined}
             onRemove={tier === 'T3' ? () => onRemoveT3(liftId) : undefined}
             removeLabel={`Remove ${lift.name} from ${day.label}`}

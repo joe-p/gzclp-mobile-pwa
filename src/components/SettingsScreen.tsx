@@ -82,6 +82,10 @@ export function SettingsScreen() {
   return (
     <div className="stack">
       <h1 className="screen-title">Settings</h1>
+      <p className="muted small">
+        e1RM is an Epley estimate based on each T1/T2 lift's current working weight and the rep
+        target for its current stage.
+      </p>
 
       {days.map((day) => (
         <section className="card" key={day.id}>
@@ -95,6 +99,7 @@ export function SettingsScreen() {
             weightFor={(key) => data.tracks[key].weight}
             stageFor={(key) => data.tracks[key].stage}
             onChange={(key, weight) => dispatch({ type: 'updateTrackWeight', key, weight })}
+            showE1rm
             onRemoveT3={(liftId) => dispatch({ type: 'removeT3', dayId: day.id, liftId })}
           />
           <AddAccessoryForm dayId={day.id} />

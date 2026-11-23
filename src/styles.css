@@ -1441,6 +1441,14 @@ button {
   line-height: 1.25;
 }
 
+.weight-e1rm {
+  margin-top: 2px;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .weight-input {
   display: flex;
   align-items: center;

@@ -11,7 +11,8 @@ linear progression program. Built to be used one-handed between sets.
 - **Tracks current weight per lift and tier.** T1 bench and T2 bench are separate progressions, just
   like the spreadsheet.
 - **Per-set logging.** Tap ✓ or ✗ for each set, including the AMRAP set.
-- **AMRAP on the last set** of every lift, with an Epley e1RM estimate for T1/T2.
+- **AMRAP on the last set** of every lift, with an Epley e1RM estimate for T1/T2. Settings shows
+  each T1/T2 lift's current e1RM from its working weight and stage rep target.
 - **Automatic progression**:
   - Complete every rep → add 5 lb (upper body) or 10 lb (lower body).
   - Miss any set → move to the next rep scheme at the same weight.
