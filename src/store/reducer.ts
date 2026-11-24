@@ -135,7 +135,6 @@ export function reducer(state: AppData, action: Action): AppData {
         ...state,
         activeSession: createSession(day, state.tracks, {
           bar: state.settings.plates.bar,
-          warmupMethod: state.settings.warmupMethod,
         }),
         lastSummaryId: null,
       }

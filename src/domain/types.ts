@@ -103,9 +103,6 @@ export interface RestRange {
 
 export type RestByTier = Record<Tier, RestRange>
 
-/** How the warmup ramp for T1/T2 is calculated. */
-export type WarmupMethod = 'even' | 'percent'
-
 /** A plate size and how many *pairs* of it the user owns. */
 export interface PlateStack {
   size: number
@@ -123,7 +120,6 @@ export interface Settings {
   plates: PlateInventory
   setupComplete: boolean
   haptics: boolean
-  warmupMethod: WarmupMethod
 }
 
 export type T3ByDay = Record<DayId, LiftId[]>

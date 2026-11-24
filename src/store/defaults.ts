@@ -23,7 +23,6 @@ export const DEFAULT_SETTINGS: Settings = {
   plates: defaultPlateInventory(),
   setupComplete: false,
   haptics: true,
-  warmupMethod: 'even',
 }
 
 export function createInitialData(): AppData {

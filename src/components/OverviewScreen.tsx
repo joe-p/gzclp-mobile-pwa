@@ -53,7 +53,6 @@ export function OverviewScreen() {
                   slot.tier,
                   track.weight,
                   data.settings.plates.bar,
-                  data.settings.warmupMethod,
                 )
 
                 return (

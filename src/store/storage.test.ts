@@ -30,21 +30,6 @@ describe('migrate', () => {
       T3: { min: 60, max: 90 },
     })
     expect(data?.settings.haptics).toBe(true)
-    expect(data?.settings.warmupMethod).toBe('even')
-  })
-
-  it('reads the warmup method and falls back to even jumps', () => {
-    const percent = migrate({
-      settings: { setupComplete: true, warmupMethod: 'percent' },
-      tracks: {},
-    })
-    expect(percent?.settings.warmupMethod).toBe('percent')
-
-    const invalid = migrate({
-      settings: { setupComplete: true, warmupMethod: 'nonsense' },
-      tracks: {},
-    })
-    expect(invalid?.settings.warmupMethod).toBe('even')
   })
 
   it('upgrades a legacy single rest time to a range on every tier', () => {
@@ -377,7 +362,7 @@ describe('migrate accessories', () => {
     const initial = createInitialData()
     const data = migrate({
       ...initial,
-      settings: { ...initial.settings, warmupMethod: 'percent' },
+      settings: { ...initial.settings },
       activeSession: {
         id: 'active',
         dayId: 'A1',

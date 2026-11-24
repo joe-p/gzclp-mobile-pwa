@@ -9,7 +9,6 @@ import type {
   SetRecord,
   TrackKey,
   TrackState,
-  WarmupMethod,
   WarmupRecord,
 } from './types'
 
@@ -22,9 +21,8 @@ export function newId(): string {
 
 export interface SessionOptions {
   now?: Date
-  /** Bar weight and warmup method are snapshotted into the session. */
+  /** Bar weight is snapshotted into the session's warmup ramps. */
   bar?: number
-  warmupMethod?: WarmupMethod
 }
 
 export function createSession(
@@ -34,7 +32,6 @@ export function createSession(
 ): ActiveSession {
   const now = options.now ?? new Date()
   const bar = options.bar ?? 45
-  const warmupMethod = options.warmupMethod ?? 'even'
 
   const exercises: ExerciseRecord[] = day.slots.map((slot) => {
     const track = tracks[trackKey(slot.liftId, slot.tier)]
@@ -50,7 +47,7 @@ export function createSession(
       tier: slot.tier,
       weight: track.weight,
       stage: track.stage,
-      warmups: warmupRecords(slot.liftId, slot.tier, track.weight, bar, warmupMethod),
+      warmups: warmupRecords(slot.liftId, slot.tier, track.weight, bar),
       sets,
       e1rm: null,
       outcome: null,

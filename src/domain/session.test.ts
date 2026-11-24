@@ -34,15 +34,12 @@ describe('createSession', () => {
   })
 
   it('snapshots a warmup ramp for T1/T2 and none for T3', () => {
-    const session = createSession(PROGRAM_DAYS[0], defaultTracks(), {
-      bar: 45,
-      warmupMethod: 'even',
-    })
+    const session = createSession(PROGRAM_DAYS[0], defaultTracks(), { bar: 45 })
 
     expect(session.exercises[0].warmups).toEqual([
       { weight: 45, reps: 5, completed: false },
       { weight: 45, reps: 5, completed: false },
-      { weight: 70, reps: 5, completed: false },
+      { weight: 60, reps: 5, completed: false },
       { weight: 90, reps: 3, completed: false },
       { weight: 115, reps: 2, completed: false },
     ])

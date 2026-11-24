@@ -11,7 +11,6 @@ import {
 } from '../domain/program'
 import type { AppData, LiftId, ProgramDay, Tier } from '../domain/types'
 import { formatWeight, minWeightForTier } from '../domain/units'
-import { WARMUP_METHOD_HINTS, WARMUP_METHOD_LABELS, WARMUP_METHODS } from '../domain/warmup'
 import { useApp } from '../store/context'
 import { downloadBackup, readImportFile, readImportUrl } from '../store/storage'
 import { MoveButtons, WeightRow } from './TrackWeightList'
@@ -386,23 +385,11 @@ export function SettingsScreen() {
           >
             Bay Strength's warmup guide
           </a>
-          . Weights are rounded to the nearest 5 lb and use the bar weight from Bar & plates. Changes
-          apply to new workouts. T3 accessories have no warmup.
+          . The ramp is picked automatically: 45% / 65% / 85% of the working weight when that gives a
+          full ramp, otherwise even jumps from the first warmup. Weights are rounded to the nearest
+          5 lb and use the bar weight from Bar & plates. Changes apply to new workouts. T3
+          accessories have no warmup.
         </p>
-        <div className="chip-row warmup-method-row" role="group" aria-label="Warmup method">
-          {WARMUP_METHODS.map((method) => (
-            <button
-              key={method}
-              type="button"
-              className={`chip ${data.settings.warmupMethod === method ? 'is-selected' : ''}`}
-              aria-pressed={data.settings.warmupMethod === method}
-              onClick={() => dispatch({ type: 'updateSettings', patch: { warmupMethod: method } })}
-            >
-              {WARMUP_METHOD_LABELS[method]}
-            </button>
-          ))}
-        </div>
-        <p className="warmup-method-hint">{WARMUP_METHOD_HINTS[data.settings.warmupMethod]}</p>
       </section>
 
       <section className="card">

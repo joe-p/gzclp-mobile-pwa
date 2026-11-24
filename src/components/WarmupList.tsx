@@ -52,9 +52,11 @@ export function WarmupList({ warmups, plateLoads, onToggle }: WarmupListProps) {
               <span className="warmup-reps">{warmup.reps} reps</span>
               {load && (
                 <span className="warmup-plates">
-                  {load.perSide.length === 0
-                    ? 'empty bar'
-                    : `${load.perSide.map(formatWeight).join(' + ')} / side`}
+                  {load.belowBar
+                    ? 'DB'
+                    : load.perSide.length === 0
+                      ? 'empty bar'
+                      : `${load.perSide.map(formatWeight).join(' + ')} / side`}
                 </span>
               )}
             </li>

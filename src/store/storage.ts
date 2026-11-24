@@ -27,7 +27,6 @@ import type {
   Tier,
   TrackKey,
   TrackState,
-  WarmupMethod,
   WarmupRecord,
 } from '../domain/types'
 import { clampRestSeconds, normalizeRestRange } from '../domain/rest'
@@ -268,10 +267,6 @@ function restRangeFromSeconds(seconds: number, tier: Tier): RestRange {
   return { min, max: Math.max(min, DEFAULT_REST_BY_TIER[tier].max) }
 }
 
-function readWarmupMethod(value: unknown): WarmupMethod {
-  return value === 'percent' ? 'percent' : 'even'
-}
-
 function readRestRange(value: unknown, tier: Tier): RestRange {
   if (typeof value === 'number' && Number.isFinite(value)) return restRangeFromSeconds(value, tier)
   if (!isObject(value)) return { ...DEFAULT_REST_BY_TIER[tier] }
@@ -340,7 +335,6 @@ export function migrate(raw: unknown): AppData | null {
     plates: readPlateInventory(rawSettings.plates),
     setupComplete: rawSettings.setupComplete === true,
     haptics: rawSettings.haptics !== false,
-    warmupMethod: readWarmupMethod(rawSettings.warmupMethod),
   }
 
   const sessions = Array.isArray(raw.sessions)
@@ -363,7 +357,7 @@ export function migrate(raw: unknown): AppData | null {
       : null
 
   // A resumable session from before warmups were tracked gets a ramp built from
-  // the current bar and method, so it can still be checked off in progress.
+  // the current bar, so it can still be checked off in progress.
   const activeSession = readActiveSession(raw.activeSession)
   if (activeSession) {
     for (const exercise of activeSession.exercises) {
@@ -373,7 +367,6 @@ export function migrate(raw: unknown): AppData | null {
         exercise.tier,
         exercise.weight,
         settings.plates.bar,
-        settings.warmupMethod,
       )
     }
   }
