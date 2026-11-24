@@ -1,21 +1,22 @@
-import { computePlateLoad, isBarbellLift } from '../domain/plates'
-import type { LiftId, WarmupRecord } from '../domain/types'
+import type { PlateLoad } from '../domain/plates'
+import type { WarmupRecord } from '../domain/types'
 import { formatWeight } from '../domain/units'
-import { useApp } from '../store/context'
 import { CheckIcon } from './icons'
 
 interface WarmupListProps {
-  liftId: LiftId
   warmups: readonly WarmupRecord[]
+  /**
+   * Plate loads for the ramp, solved in order so each step reuses what the
+   * previous one left on the bar. Null for lifts that are not barbell loaded.
+   */
+  plateLoads: readonly PlateLoad[] | null
   onToggle: (warmupIndex: number, completed: boolean) => void
 }
 
 /** Checkable warmup ramp shown above the work sets for T1 and T2. */
-export function WarmupList({ liftId, warmups, onToggle }: WarmupListProps) {
-  const { data } = useApp()
+export function WarmupList({ warmups, plateLoads, onToggle }: WarmupListProps) {
   if (warmups.length === 0) return null
 
-  const barbell = isBarbellLift(data.lifts[liftId])
   const completed = warmups.filter((warmup) => warmup.completed).length
 
   return (
@@ -29,7 +30,7 @@ export function WarmupList({ liftId, warmups, onToggle }: WarmupListProps) {
 
       <ul className="warmup-list">
         {warmups.map((warmup, index) => {
-          const load = barbell ? computePlateLoad(warmup.weight, data.settings.plates) : null
+          const load = plateLoads?.[index] ?? null
           return (
             <li
               className={`warmup-row ${warmup.completed ? 'is-done' : ''}`}

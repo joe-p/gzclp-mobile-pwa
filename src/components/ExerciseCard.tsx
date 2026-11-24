@@ -1,3 +1,4 @@
+import { computePlateLoadSequence, isBarbellLift } from '../domain/plates'
 import { describeOutcome, applyProgression, exerciseSucceeded } from '../domain/progression'
 import { resolveLift, schemeLabel, stageSpec } from '../domain/program'
 import { isSetLocked } from '../domain/session'
@@ -46,6 +47,16 @@ export function ExerciseCard({
       )
     : null
   const preview = outcome ? describeOutcome(outcome) : null
+  // Solve the whole ramp in order so each warmup only adds plates to the bar
+  // the previous one loaded, and the work sets start from the last warmup's
+  // stack instead of stripping the bar.
+  const plateLoads = isBarbellLift(lift)
+    ? computePlateLoadSequence(
+        exercise.warmups.map((warmup) => warmup.weight),
+        data.settings.plates,
+      )
+    : null
+  const warmupPlates = plateLoads?.[plateLoads.length - 1]?.perSide ?? []
 
   return (
     <section
@@ -82,11 +93,15 @@ export function ExerciseCard({
       {expanded && (
         <div className="exercise-body">
           <WarmupList
-            liftId={exercise.liftId}
             warmups={exercise.warmups}
+            plateLoads={plateLoads}
             onToggle={onToggleWarmup}
           />
-          <PlateBreakdown liftId={exercise.liftId} weight={exercise.weight} />
+          <PlateBreakdown
+            liftId={exercise.liftId}
+            weight={exercise.weight}
+            loaded={warmupPlates}
+          />
 
           <ul className="set-list">
             {exercise.sets.map((set, index) => (

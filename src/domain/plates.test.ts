@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   computePlateLoad,
+  computePlateLoadSequence,
   defaultPlateInventory,
   isBarbellLift,
   normalizePlateInventory,
   pairsFor,
+  plateChanges,
   totalPlateWeight,
   withPairs,
 } from './plates'
@@ -78,6 +80,69 @@ describe('computePlateLoad', () => {
     const load = computePlateLoad(187.5, inventory(45, { 45: 1, 25: 1, 10: 1 }))
     expect(load.loadedWeight).toBeLessThanOrEqual(187.5)
     expect(load.exact).toBe(false)
+  })
+
+  it('breaks ties toward keeping the heaviest plates', () => {
+    // 50 per side is 45 + 5 or 25 + 25; both are two plates, but the 45 keeps
+    // the stack consistent with the weights either side of it.
+    expect(computePlateLoad(145, defaultPlateInventory()).perSide).toEqual([45, 5])
+  })
+
+  it('keeps the loaded stack when it only needs extra plates', () => {
+    const load = computePlateLoad(145, defaultPlateInventory(), { loaded: [45] })
+    expect(load.perSide).toEqual([45, 5])
+    expect(load.exact).toBe(true)
+    expect(load.changes).toBe(1)
+  })
+
+  it('adds a plate instead of swapping to a shorter stack', () => {
+    // 60 per side from 45 + 10: 45 + 10 + 5 is one addition, 35 + 25 would be
+    // four plates of handling.
+    const load = computePlateLoad(165, defaultPlateInventory(), { loaded: [45, 10] })
+    expect(load.perSide).toEqual([45, 10, 5])
+    expect(load.changes).toBe(1)
+  })
+
+  it('removes plates when the loaded stack is heavier than needed', () => {
+    const load = computePlateLoad(95, defaultPlateInventory(), { loaded: [45, 5] })
+    expect(load.perSide).toEqual([25])
+    expect(load.changes).toBe(3)
+  })
+
+  it('prices removals and additions the same way', () => {
+    expect(plateChanges([], [])).toBe(0)
+    expect(plateChanges([45], [])).toBe(1)
+    expect(plateChanges([45, 5], [45])).toBe(1)
+    expect(plateChanges([25, 10], [25])).toBe(1)
+    expect(plateChanges([45, 5], [45, 10])).toBe(2)
+  })
+})
+
+describe('computePlateLoadSequence', () => {
+  it('only adds plates as the bench ramp climbs', () => {
+    const loads = computePlateLoadSequence([45, 95, 115, 135, 145], defaultPlateInventory())
+
+    expect(loads.map((load) => load.perSide)).toEqual([
+      [],
+      [25],
+      [25, 10],
+      [25, 10, 10],
+      [25, 10, 10, 5],
+    ])
+    expect(loads.every((load) => load.exact)).toBe(true)
+    // Every step is a single plate change, so nothing is ever stripped off.
+    expect(loads.map((load) => load.changes)).toEqual([0, 1, 1, 1, 1])
+  })
+
+  it('starts from the plates already on the bar', () => {
+    const loads = computePlateLoadSequence([145], defaultPlateInventory(), [45])
+    expect(loads[0].perSide).toEqual([45, 5])
+    expect(loads[0].changes).toBe(1)
+  })
+
+  it('reuses the same stack for repeated warmup weights', () => {
+    const loads = computePlateLoadSequence([45, 45, 95], defaultPlateInventory())
+    expect(loads.map((load) => load.changes)).toEqual([0, 0, 1])
   })
 })
 
