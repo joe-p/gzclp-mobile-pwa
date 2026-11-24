@@ -631,17 +631,20 @@ button {
   flex-direction: column;
 }
 
+.preview-lift {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.preview-lift:last-child {
+  border-bottom: 0;
+}
+
 .preview-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.preview-row:last-child {
-  border-bottom: 0;
 }
 
 .preview-name {
@@ -2396,6 +2399,50 @@ button {
   background: #98a3b3;
   height: 15px;
   font-size: 0.56rem;
+}
+
+/* Compact per-side plates under a weight preview. The size classes only
+   supply the colour here; the compact dimensions come last so they win. */
+.plate-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.plate-chips-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.plate-chip {
+  min-width: 24px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  display: inline-grid;
+  place-items: center;
+  color: #0b0e12;
+  font-size: 0.6rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+}
+
+.plate-chips-note {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.plate-chips-warn {
+  color: #ffc46b;
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 
 .plate-load-detail {
