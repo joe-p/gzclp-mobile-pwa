@@ -10,10 +10,9 @@ export interface WarmupSet {
 
 /**
  * Warmup rep scheme from Bay Strength's guide: 5, then 3, then 2 reps. The
- * empty-bar work is done as two sets of 5.
+ * empty-bar work is a single set of 5; every warmup weight appears once.
  */
 const WARMUP_REPS = [5, 3, 2] as const
-const EMPTY_BAR_SETS = 2
 const EMPTY_BAR_REPS = 5
 const JUMP_COUNT = 4
 const PERCENTAGES = [0.45, 0.65, 0.85] as const
@@ -103,13 +102,9 @@ export function warmupSets(
 
   const sets: WarmupSet[] = []
   if (!dumbbells) {
-    // The floor is the first warmup. Deadlift gets a single set because the
-    // ramp already starts with a loaded bar; everything else starts empty.
-    sets.push({
-      weight: floor,
-      sets: liftId === 'deadlift' ? 1 : EMPTY_BAR_SETS,
-      reps: EMPTY_BAR_REPS,
-    })
+    // The floor is the first warmup: the empty bar for a squat, or a loaded
+    // bar for a deadlift. Each weight is done once, so it never repeats.
+    sets.push({ weight: floor, sets: 1, reps: EMPTY_BAR_REPS })
   }
 
   // Compact the rep scheme when a warmup is dropped, so the first ramp set is

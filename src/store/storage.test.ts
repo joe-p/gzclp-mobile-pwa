@@ -385,7 +385,6 @@ describe('migrate accessories', () => {
 
     expect(data?.activeSession?.exercises[0].warmups).toEqual([
       { weight: 45, reps: 5, completed: false },
-      { weight: 45, reps: 5, completed: false },
       { weight: 140, reps: 5, completed: false },
       { weight: 205, reps: 3, completed: false },
       { weight: 270, reps: 2, completed: false },

@@ -5,7 +5,7 @@ describe('warmupSets', () => {
   it('scales warmups from the working weight by default', () => {
     // Percentages win the tie: 75 / 105 / 140 vs even jumps' 75 / 105 / 135.
     expect(warmupSets('squat', 'T1', 165, 45)).toEqual([
-      { weight: 45, sets: 2, reps: 5 },
+      { weight: 45, sets: 1, reps: 5 },
       { weight: 75, sets: 1, reps: 5 },
       { weight: 105, sets: 1, reps: 3 },
       { weight: 140, sets: 1, reps: 2 },
@@ -13,7 +13,7 @@ describe('warmupSets', () => {
 
     // Bay Strength's 315 lb squat example: 140, 205, 270 after the empty bar.
     expect(warmupSets('squat', 'T1', 315, 45)).toEqual([
-      { weight: 45, sets: 2, reps: 5 },
+      { weight: 45, sets: 1, reps: 5 },
       { weight: 140, sets: 1, reps: 5 },
       { weight: 205, sets: 1, reps: 3 },
       { weight: 270, sets: 1, reps: 2 },
@@ -23,7 +23,7 @@ describe('warmupSets', () => {
   it('falls back to even jumps when percentages lose steps to the floor', () => {
     // 45% rounds to the empty bar, leaving only 60 and 80; even jumps fill the ramp.
     expect(warmupSets('squat', 'T1', 95, 45)).toEqual([
-      { weight: 45, sets: 2, reps: 5 },
+      { weight: 45, sets: 1, reps: 5 },
       { weight: 60, sets: 1, reps: 5 },
       { weight: 70, sets: 1, reps: 3 },
       { weight: 85, sets: 1, reps: 2 },
@@ -42,14 +42,14 @@ describe('warmupSets', () => {
 
   it('drops ramp weights at or below the bar, and duplicate rounded weights', () => {
     expect(warmupSets('bench', 'T2', 60, 45)).toEqual([
-      { weight: 45, sets: 2, reps: 5 },
+      { weight: 45, sets: 1, reps: 5 },
       { weight: 50, sets: 1, reps: 5 },
       { weight: 55, sets: 1, reps: 3 },
     ])
 
     // 47.5 and 50 both round to 50; 55 is the work weight.
     expect(warmupSets('bench', 'T2', 55, 45)).toEqual([
-      { weight: 45, sets: 2, reps: 5 },
+      { weight: 45, sets: 1, reps: 5 },
       { weight: 50, sets: 1, reps: 5 },
     ])
   })
@@ -85,16 +85,27 @@ describe('warmupSets', () => {
 
   it('keeps the squat floor at 45 lb even on a lighter bar', () => {
     expect(warmupSets('squat', 'T2', 95, 35)).toEqual([
-      { weight: 45, sets: 2, reps: 5 },
+      { weight: 45, sets: 1, reps: 5 },
       { weight: 60, sets: 1, reps: 5 },
       { weight: 70, sets: 1, reps: 3 },
       { weight: 85, sets: 1, reps: 2 },
     ])
   })
 
+  it('never repeats a warmup weight', () => {
+    for (const liftId of ['squat', 'bench', 'ohp', 'deadlift'] as const) {
+      for (const tier of ['T1', 'T2'] as const) {
+        for (let weight = 50; weight <= 400; weight += 5) {
+          const weights = warmupSets(liftId, tier, weight, 45).map((set) => set.weight)
+          expect(new Set(weights).size, `${liftId} ${tier} ${weight}`).toBe(weights.length)
+        }
+      }
+    }
+  })
+
   it('works with a non-standard bar weight', () => {
     expect(warmupSets('ohp', 'T1', 95, 35)).toEqual([
-      { weight: 35, sets: 2, reps: 5 },
+      { weight: 35, sets: 1, reps: 5 },
       { weight: 45, sets: 1, reps: 5 },
       { weight: 60, sets: 1, reps: 3 },
       { weight: 80, sets: 1, reps: 2 },
@@ -105,7 +116,6 @@ describe('warmupSets', () => {
 describe('warmupRecords', () => {
   it('flattens grouped warmups into unchecked individual sets', () => {
     expect(warmupRecords('squat', 'T1', 165, 45)).toEqual([
-      { weight: 45, reps: 5, completed: false },
       { weight: 45, reps: 5, completed: false },
       { weight: 75, reps: 5, completed: false },
       { weight: 105, reps: 3, completed: false },

@@ -38,7 +38,6 @@ describe('createSession', () => {
 
     expect(session.exercises[0].warmups).toEqual([
       { weight: 45, reps: 5, completed: false },
-      { weight: 45, reps: 5, completed: false },
       { weight: 60, reps: 5, completed: false },
       { weight: 90, reps: 3, completed: false },
       { weight: 115, reps: 2, completed: false },
