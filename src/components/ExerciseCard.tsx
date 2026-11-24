@@ -8,7 +8,7 @@ import { useApp } from '../store/context'
 import { ChevronIcon } from './icons'
 import { PlateBreakdown } from './PlateBreakdown'
 import { SetRow } from './SetRow'
-import { WarmupList } from './WarmupList'
+import { WarmupRow } from './WarmupRow'
 
 interface ExerciseCardProps {
   exercise: ExerciseRecord
@@ -52,11 +52,30 @@ export function ExerciseCard({
   // stack instead of stripping the bar.
   const plateLoads = isBarbellLift(lift)
     ? computePlateLoadSequence(
-        exercise.warmups.map((warmup) => warmup.weight),
+        [...exercise.warmups.map((warmup) => warmup.weight), exercise.weight],
         data.settings.plates,
       )
     : null
-  const warmupPlates = plateLoads?.[plateLoads.length - 1]?.perSide ?? []
+  // The bar panel follows whatever comes next: the first unchecked warmup
+  // until work sets begin, then the first set still waiting on a result.
+  // Warmups are optional, so logging a set moves the panel on even if some
+  // warmups were skipped.
+  const nextWarmupIndex =
+    firstOpen === 0 ? exercise.warmups.findIndex((warmup) => !warmup.completed) : -1
+  const nextIsWarmup = nextWarmupIndex !== -1
+  const workIndex = exercise.warmups.length
+  const nextWeight = nextIsWarmup
+    ? exercise.warmups[nextWarmupIndex].weight
+    : exercise.weight
+  const nextName = nextIsWarmup
+    ? `Warmup ${nextWarmupIndex + 1}`
+    : firstOpen === -1
+      ? 'Work sets'
+      : `Set ${firstOpen + 1}`
+  // Reuse the plates left on the bar by the step before the next one.
+  const previousIndex = nextIsWarmup ? nextWarmupIndex - 1 : workIndex - 1
+  const previousPlates =
+    plateLoads && previousIndex >= 0 ? plateLoads[previousIndex].perSide : []
 
   return (
     <section
@@ -92,18 +111,22 @@ export function ExerciseCard({
 
       {expanded && (
         <div className="exercise-body">
-          <WarmupList
-            warmups={exercise.warmups}
-            plateLoads={plateLoads}
-            onToggle={onToggleWarmup}
-          />
           <PlateBreakdown
             liftId={exercise.liftId}
-            weight={exercise.weight}
-            loaded={warmupPlates}
+            weight={nextWeight}
+            loaded={previousPlates}
+            nextLabel={`${nextName} · ${formatWeight(nextWeight)} lb`}
           />
 
           <ul className="set-list">
+            {exercise.warmups.map((warmup, index) => (
+              <WarmupRow
+                key={`${warmup.weight}-${warmup.reps}-${index}`}
+                index={index}
+                warmup={warmup}
+                onToggle={onToggleWarmup}
+              />
+            ))}
             {exercise.sets.map((set, index) => (
               <SetRow
                 key={index}

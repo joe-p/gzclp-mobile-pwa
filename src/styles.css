@@ -2261,118 +2261,33 @@ button {
 
 /* ---------- warmups ---------- */
 
-.warmup {
-  margin-bottom: 14px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px dashed var(--line-strong);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.warmup-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.warmup-title {
-  font-size: 0.64rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+/* Warmup sets reuse the work-set row grid; only the label and check action
+   differ, so the ramp reads as one continuous list. */
+.set-warmup .set-label {
   color: var(--muted);
-  font-weight: 800;
 }
 
-.warmup-count {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--dim);
+.set-warmup .set-target {
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.warmup-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.warmup-row {
-  display: grid;
-  grid-template-columns: auto auto auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-}
-
-.warmup-check {
-  width: 34px;
-  height: 34px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border-radius: 9px;
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  color: var(--dim);
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.warmup-check svg {
-  width: 18px;
-  height: 18px;
-}
-
-.warmup-check.is-checked {
-  background: var(--ok-soft);
-  border-color: rgba(94, 224, 138, 0.45);
+.set-warmup.is-ok .set-label {
   color: var(--ok);
 }
 
-.warmup-row.is-done .warmup-weight {
-  color: var(--ok);
+.set-warmup .set-actions {
+  width: 120px;
 }
 
-.warmup-weight {
-  min-width: 48px;
-  font-weight: 800;
-  font-size: 0.88rem;
-  font-variant-numeric: tabular-nums;
+.warmup-mark {
+  width: 100%;
 }
 
-.warmup-weight small {
-  margin-left: 2px;
-  font-size: 0.62rem;
-  color: var(--muted);
-}
-
-.warmup-reps {
-  min-width: 44px;
-  white-space: nowrap;
-  font-size: 0.78rem;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.warmup-plates {
-  font-size: 0.75rem;
-  color: var(--muted);
-  text-align: right;
-  overflow-wrap: anywhere;
-}
-
-.warmup-note {
-  margin: 8px 0 0;
-  font-size: 0.72rem;
-  color: var(--dim);
+/* Heavier rule marks where the ramp ends and the work sets begin. */
+.set-list .set-warmup + .set-row {
+  margin-top: 2px;
+  border-top: 1px solid var(--line-strong);
 }
 
 .plate-load {
@@ -2394,12 +2309,31 @@ button {
   gap: 10px;
 }
 
+.plate-load-labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
 .plate-load-title {
   font-size: 0.64rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
   font-weight: 800;
+}
+
+.plate-load-next {
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: rgba(201, 247, 92, 0.1);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .plate-load-total {

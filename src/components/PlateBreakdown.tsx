@@ -6,8 +6,10 @@ import { useApp } from '../store/context'
 interface PlateBreakdownProps {
   liftId: LiftId
   weight: number
-  /** Plates already on one side (the last warmup's stack), reused where possible. */
+  /** Plates already on one side (the previous step's stack), reused where possible. */
   loaded?: readonly number[]
+  /** Which warmup or set this load is for, e.g. "Warmup 2 · 105 lb". */
+  nextLabel?: string
 }
 
 function plateClass(size: number): string {
@@ -15,7 +17,7 @@ function plateClass(size: number): string {
 }
 
 /** Shows exactly which plates to slide on each side for the working weight. */
-export function PlateBreakdown({ liftId, weight, loaded }: PlateBreakdownProps) {
+export function PlateBreakdown({ liftId, weight, loaded, nextLabel }: PlateBreakdownProps) {
   const { data } = useApp()
 
   if (!isBarbellLift(data.lifts[liftId])) {
@@ -32,7 +34,10 @@ export function PlateBreakdown({ liftId, weight, loaded }: PlateBreakdownProps) 
   return (
     <div className={`plate-load ${load.exact ? '' : 'is-short'}`}>
       <div className="plate-load-head">
-        <span className="plate-load-title">On the bar</span>
+        <span className="plate-load-labels">
+          <span className="plate-load-title">On the bar</span>
+          {nextLabel && <span className="plate-load-next">{nextLabel}</span>}
+        </span>
         <span className="plate-load-total">
           {formatWeight(load.loadedWeight)} <small>lb</small>
         </span>
