@@ -135,9 +135,21 @@ describe('computePlateLoadSequence', () => {
   })
 
   it('starts from the plates already on the bar', () => {
-    const loads = computePlateLoadSequence([145], defaultPlateInventory(), [45])
+    const loads = computePlateLoadSequence([145], defaultPlateInventory(), { initial: [45] })
     expect(loads[0].perSide).toEqual([45, 5])
     expect(loads[0].changes).toBe(1)
+  })
+
+  it('strips the bar for work sets after the warmup ramp', () => {
+    const loads = computePlateLoadSequence([95, 115, 135, 135], defaultPlateInventory(), {
+      resetAt: 3,
+    })
+
+    // Warmups still build on each other...
+    expect(loads.slice(0, 3).map((load) => load.perSide)).toEqual([[25], [25, 10], [25, 10, 10]])
+    // ...but the work set is solved as if the bar were empty.
+    expect(loads[3].perSide).toEqual([45])
+    expect(loads[3].changes).toBe(1)
   })
 
   it('reuses the same stack for repeated warmup weights', () => {

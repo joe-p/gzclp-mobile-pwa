@@ -48,12 +48,14 @@ export function ExerciseCard({
     : null
   const preview = outcome ? describeOutcome(outcome) : null
   // Solve the whole ramp in order so each warmup only adds plates to the bar
-  // the previous one loaded, and the work sets start from the last warmup's
-  // stack instead of stripping the bar.
+  // the previous one loaded. Work sets reset to a bare bar, since the bar is
+  // stripped between the warmup ramp and the first work set.
+  const workIndex = exercise.warmups.length
   const plateLoads = isBarbellLift(lift)
     ? computePlateLoadSequence(
         [...exercise.warmups.map((warmup) => warmup.weight), exercise.weight],
         data.settings.plates,
+        { resetAt: workIndex },
       )
     : null
   // The bar panel follows whatever comes next: the first unchecked warmup
@@ -63,7 +65,6 @@ export function ExerciseCard({
   const nextWarmupIndex =
     firstOpen === 0 ? exercise.warmups.findIndex((warmup) => !warmup.completed) : -1
   const nextIsWarmup = nextWarmupIndex !== -1
-  const workIndex = exercise.warmups.length
   const nextWeight = nextIsWarmup
     ? exercise.warmups[nextWarmupIndex].weight
     : exercise.weight
@@ -72,8 +73,9 @@ export function ExerciseCard({
     : firstOpen === -1
       ? 'Work sets'
       : `Set ${firstOpen + 1}`
-  // Reuse the plates left on the bar by the step before the next one.
-  const previousIndex = nextIsWarmup ? nextWarmupIndex - 1 : workIndex - 1
+  // Reuse the plates left on the bar by the step before the next one. Work
+  // sets assume a stripped bar, so nothing carries over from the last warmup.
+  const previousIndex = nextIsWarmup ? nextWarmupIndex - 1 : -1
   const previousPlates =
     plateLoads && previousIndex >= 0 ? plateLoads[previousIndex].perSide : []
 

@@ -249,18 +249,32 @@ export function computePlateLoad(
   }
 }
 
+export interface PlateLoadSequenceOptions {
+  /** Plates already hanging on one side before the first weight is loaded. */
+  initial?: readonly number[]
+  /**
+   * Index that starts from a bare bar, e.g. the first work set: warmups leave
+   * plates on the bar, but the bar is stripped before the work sets begin.
+   * That step and every step after it ignore what the earlier steps loaded.
+   */
+  resetAt?: number
+}
+
 /**
  * Solves a whole ramp in order, each step starting from the plates the previous
- * one left on the bar. Use this for warmups plus work sets so the suggested
- * loading only ever adds plates as the weight climbs.
+ * one left on the bar. Use this for warmups so the suggested loading only ever
+ * adds plates as the weight climbs, then set `resetAt` at the work sets so they
+ * are solved against an empty bar instead of inheriting the warmup stack.
  */
 export function computePlateLoadSequence(
   weights: readonly number[],
   inventory: PlateInventory,
-  initial: readonly number[] = [],
+  options: PlateLoadSequenceOptions = {},
 ): PlateLoad[] {
+  const { initial = [], resetAt } = options
   let loaded: readonly number[] = initial
-  return weights.map((weight) => {
+  return weights.map((weight, index) => {
+    if (resetAt !== undefined && index >= resetAt) loaded = []
     const load = computePlateLoad(weight, inventory, { loaded })
     loaded = load.perSide
     return load
