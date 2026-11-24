@@ -27,8 +27,15 @@ export function RestTimerBar({ startedAt, min, max, haptics, onDismiss }: RestTi
   const lastPhaseRef = useRef<RestPhase | null>(null)
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 250)
-    return () => window.clearInterval(id)
+    const tick = () => setNow(Date.now())
+    const id = window.setInterval(tick, 250)
+    // Backgrounded timers are throttled (or paused), so resync the moment the
+    // app is visible again instead of waiting for the next tick.
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', tick)
+    }
   }, [])
 
   const elapsed = Math.max(0, (now - startedAt) / 1000)

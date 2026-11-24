@@ -14,20 +14,15 @@ import { TopBar } from './components/TopBar'
 import type { Tier } from './domain/types'
 import { AppProvider } from './store/AppProvider'
 import { useApp } from './store/context'
-
-interface RestState {
-  startedAt: number
-  min: number
-  max: number
-  sessionId: string
-  /** True while the minimum rest time is still running, holding back the next set. */
-  blocked: boolean
-}
+import { clearRestTimer, loadRestTimer, saveRestTimer } from './store/restTimer'
+import type { RestTimerState } from './store/restTimer'
 
 function Shell() {
   const { data } = useApp()
   const [tab, setTab] = useState<Tab>('workout')
-  const [rest, setRest] = useState<RestState | null>(null)
+  // Seeded from storage so a reload, or the OS reclaiming the PWA while the
+  // phone is locked, resumes the timer in place instead of losing it.
+  const [rest, setRest] = useState<RestTimerState | null>(() => loadRestTimer())
 
   const startRest = useCallback(
     (tier: Tier) => {
@@ -45,8 +40,15 @@ function Shell() {
     [data.settings.restByTier, data.activeSession?.id],
   )
 
-  // Stale timers from a finished session are ignored rather than cleared in an effect.
+  // A timer left over from a finished or discarded session never shows up.
   const activeRest = rest && rest.sessionId === data.activeSession?.id ? rest : null
+
+  // Mirror the running timer to storage; dismissing it, finishing the session,
+  // or letting it go stale clears the saved copy.
+  useEffect(() => {
+    if (activeRest) saveRestTimer(activeRest)
+    else clearRestTimer()
+  }, [activeRest])
 
   // Rest unlocks itself once the minimum rest time has passed; the timer bar's
   // own ticker only drives the countdown display.
