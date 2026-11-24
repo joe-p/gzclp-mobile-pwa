@@ -671,33 +671,14 @@ button {
   margin-left: 2px;
 }
 
-/* Warmup ramp and per-side plates share one row under a lift preview: warmups
-   sit on the left, plate chips stay right-aligned. They only wrap on narrow
-   screens. */
-.preview-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px 10px;
-  margin-top: 7px;
-}
-
-.preview-meta:empty {
-  display: none;
-}
-
-.preview-meta .plate-chips {
-  flex: 1;
-  margin-top: 0;
-}
-
-/* Warmup ramp under a lift preview: weight×reps per set, in session order. */
+/* Warmup ramp under a lift preview, on its own row after the plate chips:
+   weight×reps per set, in session order. */
 .preview-warmups {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  margin-top: 6px;
 }
 
 .preview-warmups-label {

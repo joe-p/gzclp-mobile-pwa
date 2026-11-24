@@ -10,9 +10,10 @@ interface DayPreviewProps {
 }
 
 /**
- * The lift list shared by the "up next" card and the overview. Each T1/T2 lift
- * also lists its warmup ramp, resolved from the current weight and bar the same
- * way a session snapshots it, so the ramp matches what you'll actually do.
+ * The lift list shared by the "up next" card and the overview: tier, name,
+ * scheme, working weight, the plates per side for that weight, and the warmup
+ * ramp underneath. The ramp is resolved from the current weight and bar the
+ * same way a session snapshots it, so it matches what you'll actually do.
  */
 export function DayPreview({ day }: DayPreviewProps) {
   const { data } = useApp()
@@ -44,25 +45,23 @@ export function DayPreview({ day }: DayPreviewProps) {
                 <small>lb</small>
               </span>
             </div>
-            <div className="preview-meta">
-              {warmups.length > 0 && (
-                <div className="preview-warmups">
-                  <span className="preview-warmups-label">Warmups</span>
-                  <span className="preview-warmup-list">
-                    {warmups.map((warmup, index) => (
-                      <span
-                        key={index}
-                        className="preview-warmup"
-                        title={`${formatWeight(warmup.weight)} lb × ${warmup.reps} reps`}
-                      >
-                        {formatWeight(warmup.weight)}×{warmup.reps}
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              )}
-              <PlateChips liftId={slot.liftId} weight={track.weight} name={lift.name} />
-            </div>
+            <PlateChips liftId={slot.liftId} weight={track.weight} name={lift.name} />
+            {warmups.length > 0 && (
+              <div className="preview-warmups">
+                <span className="preview-warmups-label">Warmups</span>
+                <span className="preview-warmup-list">
+                  {warmups.map((warmup, index) => (
+                    <span
+                      key={index}
+                      className="preview-warmup"
+                      title={`${formatWeight(warmup.weight)} lb × ${warmup.reps} reps`}
+                    >
+                      {formatWeight(warmup.weight)}×{warmup.reps}
+                    </span>
+                  ))}
+                </span>
+              </div>
+            )}
           </li>
         )
       })}
