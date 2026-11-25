@@ -38,14 +38,22 @@ export function DayPreview({ day }: DayPreviewProps) {
           <li key={key} className="preview-lift">
             <div className="preview-row">
               <span className={`tier-dot tier-${slot.tier.toLowerCase()}`}>{slot.tier}</span>
-              <span className="preview-name">{lift.name}</span>
-              <span className="preview-scheme">{schemeLabel(spec.sets, spec.reps)}</span>
-              <span className="preview-weight">
-                {formatWeight(track.weight)}
-                <small>lb</small>
-              </span>
+              <div className="preview-title">
+                <span className="preview-headline">
+                  <span className="preview-name">{lift.name}</span>
+                  {track.weight > 0 && (
+                    <span className="preview-weight">
+                      {formatWeight(track.weight)}
+                      <small>lb</small>
+                    </span>
+                  )}
+                </span>
+                <span className="preview-sub">
+                  <span className="preview-scheme">{schemeLabel(spec.sets, spec.reps)}</span>
+                </span>
+              </div>
+              <PlateChips liftId={slot.liftId} weight={track.weight} name={lift.name} />
             </div>
-            <PlateChips liftId={slot.liftId} weight={track.weight} name={lift.name} />
             {warmups.length > 0 && (
               <div className="preview-warmups">
                 <span className="preview-warmups-label">Warmups</span>

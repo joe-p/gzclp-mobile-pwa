@@ -641,26 +641,82 @@ button {
 }
 
 .preview-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Name and working weight share the top line, joined by an @; the rep scheme
+   (and stage) drops to a muted sub-line underneath. Chips sit at the row's
+   right edge and wrap among themselves if the stack gets long. */
+.preview-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.preview-headline,
+.exercise-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.preview-headline > * + *::before,
+.exercise-headline > * + *::before {
+  content: '@';
+  margin-right: 5px;
+  color: var(--dim);
+}
+
+/* Middots keep the sub-line's facts apart. */
+.exercise-sub > * + *::before {
+  content: '·';
+  margin-right: 6px;
+  color: var(--dim);
+}
+
+.preview-row > .plate-chips {
+  margin-top: 0;
 }
 
 .preview-name {
   font-weight: 700;
   font-size: 0.92rem;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exercise-sub,
+.preview-sub {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .preview-scheme {
-  color: var(--muted);
-  font-size: 0.78rem;
+  flex: none;
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .preview-weight {
+  flex: none;
+  color: var(--text);
   font-weight: 800;
+  font-size: 0.86rem;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .preview-weight small,
@@ -671,7 +727,7 @@ button {
   margin-left: 2px;
 }
 
-/* Warmup ramp under a lift preview, on its own row after the plate chips:
+/* Warmup ramp under a lift preview, below the name/scheme/weight/plates row:
    weight×reps per set, in session order. */
 .preview-warmups {
   display: flex;
@@ -830,7 +886,7 @@ button {
 .exercise-head {
   width: 100%;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
   min-height: 66px;
@@ -859,19 +915,27 @@ button {
 .exercise-name {
   font-weight: 750;
   font-size: 1rem;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.exercise-sub {
-  font-size: 0.72rem;
-  color: var(--muted);
+.exercise-scheme,
+.exercise-stage {
+  flex: none;
+  white-space: nowrap;
+}
+
+.exercise-stage {
+  color: var(--dim);
 }
 
 .exercise-weight {
+  flex: none;
+  color: var(--text);
   font-weight: 800;
-  font-size: 1.05rem;
+  font-size: 0.92rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

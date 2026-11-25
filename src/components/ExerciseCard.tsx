@@ -86,15 +86,21 @@ export function ExerciseCard({
       <button type="button" className="exercise-head" onClick={onToggle} aria-expanded={expanded}>
         <span className={`tier-dot tier-${exercise.tier.toLowerCase()}`}>{exercise.tier}</span>
         <span className="exercise-title">
-          <span className="exercise-name">{lift.name}</span>
-          <span className="exercise-sub">
-            {schemeLabel(spec.sets, spec.reps)}
-            {exercise.tier === 'T3' ? ' · accessory' : ` · stage ${exercise.stage + 1}/3`}
+          <span className="exercise-headline">
+            <span className="exercise-name">{lift.name}</span>
+            {exercise.weight > 0 && (
+              <span className="exercise-weight">
+                {formatWeight(exercise.weight)}
+                <small>lb</small>
+              </span>
+            )}
           </span>
-        </span>
-        <span className="exercise-weight">
-          {formatWeight(exercise.weight)}
-          <small>lb</small>
+          <span className="exercise-sub">
+            <span className="exercise-scheme">{schemeLabel(spec.sets, spec.reps)}</span>
+            <span className="exercise-stage">
+              {exercise.tier === 'T3' ? 'accessory' : `stage ${exercise.stage + 1}/3`}
+            </span>
+          </span>
         </span>
         <span
           className={`exercise-count ${complete ? (missed ? 'is-missed' : 'is-done') : ''}`}
