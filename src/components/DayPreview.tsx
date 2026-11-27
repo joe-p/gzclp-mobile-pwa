@@ -40,6 +40,7 @@ export function DayPreview({ day }: DayPreviewProps) {
               <span className={`tier-dot tier-${slot.tier.toLowerCase()}`}>{slot.tier}</span>
               <div className="preview-title">
                 <span className="preview-headline">
+                  <span className="preview-scheme">{schemeLabel(spec.sets, spec.reps)}</span>
                   <span className="preview-name">{lift.name}</span>
                   {track.weight > 0 && (
                     <span className="preview-weight">
@@ -47,9 +48,6 @@ export function DayPreview({ day }: DayPreviewProps) {
                       <small>lb</small>
                     </span>
                   )}
-                </span>
-                <span className="preview-sub">
-                  <span className="preview-scheme">{schemeLabel(spec.sets, spec.reps)}</span>
                 </span>
               </div>
               <PlateChips liftId={slot.liftId} weight={track.weight} name={lift.name} />

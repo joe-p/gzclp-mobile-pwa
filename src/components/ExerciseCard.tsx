@@ -87,6 +87,7 @@ export function ExerciseCard({
         <span className={`tier-dot tier-${exercise.tier.toLowerCase()}`}>{exercise.tier}</span>
         <span className="exercise-title">
           <span className="exercise-headline">
+            <span className="exercise-scheme">{schemeLabel(spec.sets, spec.reps)}</span>
             <span className="exercise-name">{lift.name}</span>
             {exercise.weight > 0 && (
               <span className="exercise-weight">
@@ -96,7 +97,6 @@ export function ExerciseCard({
             )}
           </span>
           <span className="exercise-sub">
-            <span className="exercise-scheme">{schemeLabel(spec.sets, spec.reps)}</span>
             <span className="exercise-stage">
               {exercise.tier === 'T3' ? 'accessory' : `stage ${exercise.stage + 1}/3`}
             </span>

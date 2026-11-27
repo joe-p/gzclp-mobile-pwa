@@ -647,8 +647,9 @@ button {
 }
 
 /* Name and working weight share the top line, joined by an @; the rep scheme
-   (and stage) drops to a muted sub-line underneath. Chips sit at the row's
-   right edge and wrap among themselves if the stack gets long. */
+   leads the line (before the name) and the stage drops to a muted sub-line
+   underneath. Chips sit at the row's right edge and wrap among themselves if
+   the stack gets long. */
 .preview-title {
   flex: 1;
   display: flex;
@@ -665,8 +666,10 @@ button {
   min-width: 0;
 }
 
-.preview-headline > * + *::before,
-.exercise-headline > * + *::before {
+/* Only the weight is glued to the name with an @; the leading scheme sits
+   alongside it with just the headline gap. */
+.preview-headline > .preview-weight::before,
+.exercise-headline > .exercise-weight::before {
   content: '@';
   margin-right: 5px;
   color: var(--dim);
@@ -703,9 +706,12 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-.preview-scheme {
+.preview-scheme,
+.exercise-scheme {
   flex: none;
   font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -921,13 +927,9 @@ button {
   text-overflow: ellipsis;
 }
 
-.exercise-scheme,
 .exercise-stage {
   flex: none;
   white-space: nowrap;
-}
-
-.exercise-stage {
   color: var(--dim);
 }
 
